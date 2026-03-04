@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronLeft, Sparkles, Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Step1Project } from "@/components/form/Step1Project";
@@ -14,15 +15,7 @@ import { GeneratedBriefView } from "@/components/brief/GeneratedBriefView";
 import { generateBrief } from "@/lib/brief-generator";
 import type { BriefFormData, GeneratedBrief } from "@/types/brief";
 
-const STEP_LABELS = [
-  "Project",
-  "Goals",
-  "Creative",
-  "Deliverables",
-  "Timeline",
-  "References",
-];
-
+const STEP_LABELS = ["Project", "Goals", "Creative", "Deliverables", "Timeline", "References"];
 const TOTAL_STEPS = 6;
 
 const defaultFormData: BriefFormData = {
@@ -88,6 +81,12 @@ function validateStep(step: number, data: BriefFormData): ValidationErrors {
   return errors;
 }
 
+const STEP_VARIANTS = {
+  enter: { opacity: 0, y: 18 },
+  center: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
+};
+
 export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<BriefFormData>(defaultFormData);
@@ -128,7 +127,6 @@ export default function Home() {
       setErrors(stepErrors);
       return;
     }
-
     setIsGenerating(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
     const brief = generateBrief(formData);
@@ -148,40 +146,67 @@ export default function Home() {
   const stepProps = { data: formData, onChange: updateFormData, errors };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: "var(--background)" }}
-    >
-      {/* Radial glow */}
+    <div style={{ minHeight: "100vh", background: "var(--background)" }}>
+      {/* Ambient glow */}
       <div
-        className="fixed inset-0 pointer-events-none"
         style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
           background:
-            "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(201, 169, 110, 0.07) 0%, transparent 60%)",
+            "radial-gradient(ellipse 70% 40% at 50% -10%, rgba(196, 160, 107, 0.06) 0%, transparent 60%)",
+          zIndex: 0,
         }}
       />
 
       {/* Header */}
       <header
-        className="sticky top-0 z-50 px-6 py-4 flex items-center justify-between"
         style={{
-          background: "rgba(8, 8, 8, 0.88)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          padding: "0 clamp(20px, 5vw, 48px)",
+          height: "60px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "rgba(4, 4, 4, 0.92)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
           borderBottom: "1px solid var(--border)",
         }}
       >
         <Logo size="sm" />
+
         {!generatedBrief && (
-          <div className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--muted-foreground)" }}>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 600,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "var(--muted-foreground)",
+              fontFamily: "var(--font-dm-sans), sans-serif",
+            }}
+          >
             Client Brief
-          </div>
+          </span>
         )}
+
         {generatedBrief && (
           <button
             onClick={handleReset}
-            className="text-xs font-medium transition-colors"
-            style={{ color: "var(--muted-foreground)" }}
+            style={{
+              fontSize: "11px",
+              fontWeight: 500,
+              letterSpacing: "0.08em",
+              color: "var(--muted-foreground)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              transition: "color 0.2s ease",
+              fontFamily: "var(--font-dm-sans), sans-serif",
+            }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted-foreground)")}
           >
@@ -190,46 +215,109 @@ export default function Home() {
         )}
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 py-12">
+      {/* Main */}
+      <main
+        style={{
+          maxWidth: "680px",
+          margin: "0 auto",
+          padding: "clamp(32px, 6vw, 72px) clamp(20px, 5vw, 40px)",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
         {/* Generated Brief */}
         {generatedBrief && (
-          <GeneratedBriefView
-            brief={generatedBrief}
-            formData={formData}
-            onReset={handleReset}
-          />
+          <GeneratedBriefView brief={generatedBrief} formData={formData} onReset={handleReset} />
         )}
 
         {/* Intake Form */}
         {!generatedBrief && (
           <>
             {/* Hero — step 1 only */}
-            {currentStep === 1 && (
-              <div className="mb-10 animate-fade-in-up">
-                <h1
-                  className="text-5xl font-bold mb-4"
-                  style={{
-                    color: "var(--foreground)",
-                    letterSpacing: "-0.04em",
-                    lineHeight: "1.08",
-                  }}
+            <AnimatePresence>
+              {currentStep === 1 && (
+                <motion.div
+                  key="hero"
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ marginBottom: "52px" }}
                 >
-                  Tell us about
-                  <br />
-                  <span style={{ color: "var(--accent)" }}>your project.</span>
-                </h1>
-                <p
-                  className="text-base leading-relaxed"
-                  style={{ color: "var(--muted-foreground)", maxWidth: "400px" }}
+                  <p
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      letterSpacing: "0.24em",
+                      textTransform: "uppercase",
+                      color: "var(--muted-foreground)",
+                      fontFamily: "var(--font-dm-sans), sans-serif",
+                      marginBottom: "20px",
+                    }}
+                  >
+                    — Client Brief
+                  </p>
+                  <h1
+                    style={{
+                      fontFamily: "var(--font-cormorant), Georgia, serif",
+                      fontSize: "clamp(44px, 9vw, 80px)",
+                      fontWeight: 600,
+                      lineHeight: 1.04,
+                      letterSpacing: "-0.02em",
+                      color: "var(--foreground)",
+                      marginBottom: "24px",
+                    }}
+                  >
+                    Tell us about
+                    <br />
+                    <em style={{ fontStyle: "italic", color: "var(--accent)" }}>
+                      your project.
+                    </em>
+                  </h1>
+                  <p
+                    style={{
+                      fontSize: "14px",
+                      lineHeight: 1.75,
+                      color: "var(--muted-foreground)",
+                      maxWidth: "380px",
+                    }}
+                  >
+                    Fill in the details below and we&apos;ll compile everything into a clean,
+                    structured brief — ready to share.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Step counter for steps 2–6 */}
+            <AnimatePresence>
+              {currentStep > 1 && (
+                <motion.div
+                  key={`heading-${currentStep}`}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ marginBottom: "8px" }}
                 >
-                  Fill in the details below and we&apos;ll compile everything into a
-                  clean, structured brief — ready to use.
-                </p>
-              </div>
-            )}
+                  <p
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      letterSpacing: "0.2em",
+                      textTransform: "uppercase",
+                      color: "var(--accent)",
+                      fontFamily: "var(--font-dm-sans), sans-serif",
+                    }}
+                  >
+                    Step {String(currentStep).padStart(2, "0")} / {TOTAL_STEPS}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Progress */}
-            <div className="mb-8">
+            <div style={{ marginBottom: "36px" }}>
               <ProgressBar
                 currentStep={currentStep}
                 totalSteps={TOTAL_STEPS}
@@ -238,69 +326,137 @@ export default function Home() {
             </div>
 
             {/* Step card */}
-            <div
-              className="rounded-2xl p-7 sm:p-9 mb-5"
-              style={{
-                background: "var(--surface-elevated)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              {currentStep === 1 && <Step1Project {...stepProps} />}
-              {currentStep === 2 && <Step2Goals {...stepProps} />}
-              {currentStep === 3 && <Step3Creative {...stepProps} />}
-              {currentStep === 4 && <Step4Deliverables {...stepProps} />}
-              {currentStep === 5 && <Step5Timeline {...stepProps} />}
-              {currentStep === 6 && <Step6References {...stepProps} />}
-            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                variants={STEP_VARIANTS}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  background: "var(--surface-elevated)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "4px",
+                  padding: "clamp(28px, 5vw, 48px) clamp(24px, 5vw, 44px)",
+                  marginBottom: "20px",
+                }}
+              >
+                {currentStep === 1 && <Step1Project {...stepProps} />}
+                {currentStep === 2 && <Step2Goals {...stepProps} />}
+                {currentStep === 3 && <Step3Creative {...stepProps} />}
+                {currentStep === 4 && <Step4Deliverables {...stepProps} />}
+                {currentStep === 5 && <Step5Timeline {...stepProps} />}
+                {currentStep === 6 && <Step6References {...stepProps} />}
+              </motion.div>
+            </AnimatePresence>
 
             {/* Navigation */}
-            <div className="flex gap-3 justify-between">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
               <button
                 onClick={handleBack}
                 disabled={currentStep === 1}
-                className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-medium transition-all duration-200"
                 style={{
-                  background: "var(--surface)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "14px 24px",
+                  background: "transparent",
                   border: "1px solid var(--border)",
-                  color: currentStep === 1 ? "var(--muted-foreground)" : "var(--foreground)",
-                  opacity: currentStep === 1 ? 0.35 : 1,
+                  borderRadius: "3px",
+                  color: currentStep === 1 ? "var(--border)" : "var(--muted-foreground)",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
                   cursor: currentStep === 1 ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                }}
+                onMouseEnter={(e) => {
+                  if (currentStep !== 1) {
+                    e.currentTarget.style.borderColor = "var(--muted-foreground)";
+                    e.currentTarget.style.color = "var(--foreground)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentStep !== 1) {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.color = "var(--muted-foreground)";
+                  }
                 }}
               >
-                <ChevronLeft size={15} />
-                Back
+                ← Back
               </button>
 
               {currentStep < TOTAL_STEPS ? (
                 <button
                   onClick={handleNext}
-                  className="flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-bold transition-all duration-200"
-                  style={{ background: "var(--accent)", color: "var(--background)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "14px 36px",
+                    background: "var(--accent)",
+                    border: "1px solid var(--accent)",
+                    borderRadius: "3px",
+                    color: "var(--background)",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    fontFamily: "var(--font-dm-sans), sans-serif",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--accent-light)";
+                    e.currentTarget.style.borderColor = "var(--accent-light)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "var(--accent)";
+                    e.currentTarget.style.borderColor = "var(--accent)";
+                  }}
                 >
-                  Continue
-                  <ChevronRight size={15} />
+                  Continue →
                 </button>
               ) : (
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  className="flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-bold transition-all duration-200"
                   style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "14px 36px",
                     background: isGenerating ? "var(--accent-dark)" : "var(--accent)",
+                    border: `1px solid ${isGenerating ? "var(--accent-dark)" : "var(--accent)"}`,
+                    borderRadius: "3px",
                     color: "var(--background)",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
                     cursor: isGenerating ? "not-allowed" : "pointer",
+                    transition: "all 0.2s ease",
+                    fontFamily: "var(--font-dm-sans), sans-serif",
                   }}
                 >
                   {isGenerating ? (
                     <>
-                      <Loader2 size={15} className="animate-spin" />
-                      Generating Brief...
+                      <Loader2 size={13} className="animate-spin" />
+                      Generating...
                     </>
                   ) : (
                     <>
-                      <Sparkles size={15} />
+                      <Sparkles size={13} />
                       Generate Brief
                     </>
                   )}
@@ -309,11 +465,15 @@ export default function Home() {
             </div>
 
             <p
-              className="text-center text-xs mt-5"
-              style={{ color: "var(--muted-foreground)" }}
+              style={{
+                textAlign: "center",
+                fontSize: "11px",
+                marginTop: "20px",
+                color: "var(--muted-foreground)",
+                opacity: 0.6,
+              }}
             >
-              Fields marked with{" "}
-              <span style={{ color: "var(--accent)" }}>*</span> are required
+              Fields marked with <span style={{ color: "var(--accent)" }}>·</span> are required
             </p>
           </>
         )}
@@ -321,11 +481,25 @@ export default function Home() {
 
       {/* Footer */}
       <footer
-        className="mt-16 py-8 px-6 text-center"
-        style={{ borderTop: "1px solid var(--border)" }}
+        style={{
+          marginTop: "80px",
+          padding: "32px clamp(20px, 5vw, 48px)",
+          borderTop: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "12px",
+        }}
       >
         <Logo size="sm" />
-        <p className="text-xs mt-3" style={{ color: "var(--muted-foreground)" }}>
+        <p
+          style={{
+            fontSize: "11px",
+            color: "var(--muted-foreground)",
+            letterSpacing: "0.04em",
+            opacity: 0.6,
+          }}
+        >
           © {new Date().getFullYear()} Studio 858. All rights reserved.
         </p>
       </footer>

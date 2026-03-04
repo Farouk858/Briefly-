@@ -28,27 +28,44 @@ interface SectionProps {
   icon: React.ReactNode;
   title: string;
   children: React.ReactNode;
+  accentBar?: boolean;
 }
 
-function Section({ icon, title, children }: SectionProps) {
+function Section({ icon, title, children, accentBar = false }: SectionProps) {
   return (
     <div
-      className="rounded-xl p-6"
       style={{
         background: "var(--surface-elevated)",
         border: "1px solid var(--border)",
+        borderRadius: "4px",
+        padding: "28px 32px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <div className="flex items-center gap-3 mb-4">
+      {accentBar && (
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: "rgba(201, 169, 110, 0.1)" }}
-        >
-          <span style={{ color: "var(--accent)" }}>{icon}</span>
-        </div>
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "2px",
+            height: "100%",
+            background: "var(--accent)",
+          }}
+        />
+      )}
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+        <span style={{ color: "var(--accent)", opacity: 0.8, flexShrink: 0 }}>{icon}</span>
         <h3
-          className="text-xs font-bold tracking-widest uppercase"
-          style={{ color: "var(--accent)" }}
+          style={{
+            fontSize: "9px",
+            fontWeight: 700,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "var(--muted-foreground)",
+            fontFamily: "var(--font-dm-sans), sans-serif",
+          }}
         >
           {title}
         </h3>
@@ -134,87 +151,136 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
     URL.revokeObjectURL(url);
   };
 
+  const bodyText: React.CSSProperties = {
+    fontSize: "14px",
+    lineHeight: 1.75,
+    color: "var(--foreground)",
+    opacity: 0.88,
+  };
+
   return (
     <div className="animate-fade-in">
-      {/* Header */}
+      {/* Hero header */}
       <div
-        className="rounded-2xl p-8 mb-6 relative overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, var(--surface-elevated) 0%, var(--muted) 100%)",
-          border: "1px solid var(--border)",
+          marginBottom: "40px",
+          paddingBottom: "40px",
+          borderBottom: "1px solid var(--border)",
         }}
       >
-        {/* Decorative line */}
-        <div
-          className="absolute top-0 left-0 right-0 h-0.5"
+        <p
           style={{
-            background: "linear-gradient(90deg, transparent, var(--accent), transparent)",
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color: "var(--accent)",
+            fontFamily: "var(--font-dm-sans), sans-serif",
+            marginBottom: "16px",
           }}
-        />
+        >
+          — Project Brief
+        </p>
 
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <h1
+          style={{
+            fontFamily: "var(--font-cormorant), Georgia, serif",
+            fontSize: "clamp(36px, 7vw, 60px)",
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
+            lineHeight: 1.05,
+            color: "var(--foreground)",
+            marginBottom: "16px",
+          }}
+        >
+          {formData.projectName || "Untitled Project"}
+        </h1>
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "16px",
+            justifyContent: "space-between",
+          }}
+        >
           <div>
-            <p
-              className="text-xs font-bold tracking-widest uppercase mb-2"
-              style={{ color: "var(--accent)" }}
-            >
-              Project Brief
-            </p>
-            <h1
-              className="text-3xl font-bold tracking-tight"
-              style={{ color: "var(--foreground)", letterSpacing: "-0.03em" }}
-            >
-              {formData.projectName || "Untitled Project"}
-            </h1>
             {(formData.companyName || formData.clientName) && (
-              <p className="text-sm mt-1.5" style={{ color: "var(--muted-foreground)" }}>
+              <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "4px" }}>
                 {formData.companyName || formData.clientName}
                 {formData.clientEmail && (
-                  <span> · {formData.clientEmail}</span>
+                  <span style={{ opacity: 0.6 }}> · {formData.clientEmail}</span>
                 )}
               </p>
             )}
-            <p className="text-xs mt-3" style={{ color: "var(--muted-foreground)" }}>
+            <p
+              style={{
+                fontSize: "11px",
+                color: "var(--muted-foreground)",
+                letterSpacing: "0.04em",
+                opacity: 0.6,
+                fontFamily: "var(--font-mono), monospace",
+              }}
+            >
               Generated {formatDate(brief.generatedAt)}
             </p>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 flex-shrink-0">
+          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium transition-all duration-200"
               style={{
-                background: "var(--surface)",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "10px 18px",
+                background: "transparent",
                 border: "1px solid var(--border)",
+                borderRadius: "3px",
                 color: copied ? "var(--accent)" : "var(--muted-foreground)",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                fontFamily: "var(--font-dm-sans), sans-serif",
               }}
-              onMouseEnter={(e) =>
-                !copied && (e.currentTarget.style.borderColor = "var(--accent)")
-              }
-              onMouseLeave={(e) =>
-                !copied && (e.currentTarget.style.borderColor = "var(--border)")
-              }
+              onMouseEnter={(e) => {
+                if (!copied) e.currentTarget.style.borderColor = "var(--accent)";
+              }}
+              onMouseLeave={(e) => {
+                if (!copied) e.currentTarget.style.borderColor = "var(--border)";
+              }}
             >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
+              {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? "Copied!" : "Copy"}
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium transition-all duration-200"
               style={{
-                background: "var(--surface)",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "10px 18px",
+                background: "transparent",
                 border: "1px solid var(--border)",
+                borderRadius: "3px",
                 color: "var(--muted-foreground)",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                fontFamily: "var(--font-dm-sans), sans-serif",
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.borderColor = "var(--accent)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.borderColor = "var(--border)")
-              }
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
             >
-              <Download size={13} />
+              <Download size={12} />
               Download
             </button>
           </div>
@@ -222,96 +288,115 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
       </div>
 
       {/* Brief Sections */}
-      <div className="grid grid-cols-1 gap-4">
-        <Section icon={<FileText size={16} />} title="Project Overview">
-          <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-            {brief.projectOverview}
-          </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <Section icon={<FileText size={14} />} title="Project Overview" accentBar>
+          <p style={bodyText}>{brief.projectOverview}</p>
         </Section>
 
-        <Section icon={<Target size={16} />} title="Objectives">
-          <ul className="flex flex-col gap-2">
+        <Section icon={<Target size={14} />} title="Objectives">
+          <ul style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {brief.objectives.map((obj, i) => (
-              <li key={i} className="flex items-start gap-3">
+              <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
                 <span
-                  className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
                   style={{
-                    background: "rgba(201, 169, 110, 0.15)",
+                    width: "20px",
+                    height: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    marginTop: "2px",
                     color: "var(--accent)",
+                    background: "rgba(196, 160, 107, 0.1)",
+                    borderRadius: "2px",
+                    fontFamily: "var(--font-mono), monospace",
                   }}
                 >
                   {i + 1}
                 </span>
-                <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-                  {obj}
-                </p>
+                <p style={bodyText}>{obj}</p>
               </li>
             ))}
           </ul>
         </Section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Section icon={<Users size={16} />} title="Target Audience">
-            <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-              {brief.targetAudience}
-            </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          <Section icon={<Users size={14} />} title="Target Audience">
+            <p style={bodyText}>{brief.targetAudience}</p>
           </Section>
 
-          <Section icon={<Palette size={16} />} title="Creative Direction">
-            <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-              {brief.creativeDirection}
-            </p>
+          <Section icon={<Palette size={14} />} title="Creative Direction">
+            <p style={bodyText}>{brief.creativeDirection}</p>
           </Section>
         </div>
 
-        <Section icon={<Package size={16} />} title="Deliverables">
-          <ul className="flex flex-col gap-2">
+        <Section icon={<Package size={14} />} title="Deliverables">
+          <ul style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {brief.deliverables.map((d, i) => (
-              <li key={i} className="flex items-start gap-2">
+              <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                 <span
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2"
-                  style={{ background: "var(--accent)" }}
+                  style={{
+                    width: "4px",
+                    height: "4px",
+                    borderRadius: "50%",
+                    background: "var(--accent)",
+                    flexShrink: 0,
+                    marginTop: "9px",
+                  }}
                 />
-                <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-                  {d}
-                </p>
+                <p style={bodyText}>{d}</p>
               </li>
             ))}
           </ul>
         </Section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Section icon={<Clock size={16} />} title="Timeline">
-            <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-              {brief.timeline}
-            </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          <Section icon={<Clock size={14} />} title="Timeline">
+            <p style={bodyText}>{brief.timeline}</p>
           </Section>
 
-          <Section icon={<DollarSign size={16} />} title="Budget">
-            <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-              {brief.budget}
-            </p>
+          <Section icon={<DollarSign size={14} />} title="Budget">
+            <p style={bodyText}>{brief.budget}</p>
           </Section>
         </div>
 
         {brief.references.length > 0 && (
-          <Section icon={<Link2 size={16} />} title="References">
-            <div className="flex flex-col gap-3">
+          <Section icon={<Link2 size={14} />} title="References">
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {brief.references.map((ref) => (
-                <div key={ref.id} className="flex flex-col gap-0.5">
+                <div key={ref.id} style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                   <a
                     href={ref.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium transition-colors hover:underline"
-                    style={{ color: "var(--accent)" }}
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "var(--accent)",
+                      textDecoration: "none",
+                      transition: "opacity 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.75")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                   >
                     {ref.label || ref.url}
                   </a>
                   {ref.notes && (
-                    <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-                      {ref.notes}
-                    </p>
+                    <p style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>{ref.notes}</p>
                   )}
                 </div>
               ))}
@@ -319,34 +404,38 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
           </Section>
         )}
 
-        <Section icon={<FileText size={16} />} title="Technical Requirements">
-          <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-            {brief.technicalRequirements}
-          </p>
+        <Section icon={<FileText size={14} />} title="Technical Requirements">
+          <p style={bodyText}>{brief.technicalRequirements}</p>
         </Section>
 
         {brief.notes && brief.notes !== "No additional notes provided." && (
-          <Section icon={<StickyNote size={16} />} title="Additional Notes">
-            <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
-              {brief.notes}
-            </p>
+          <Section icon={<StickyNote size={14} />} title="Additional Notes">
+            <p style={bodyText}>{brief.notes}</p>
           </Section>
         )}
 
-        {/* Uploaded files summary */}
         {(formData.uploadedFiles.length > 0 || formData.existingBrief.length > 0) && (
-          <Section icon={<FileText size={16} />} title="Attached Files">
-            <div className="flex flex-col gap-2">
+          <Section icon={<FileText size={14} />} title="Attached Files">
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {[...formData.existingBrief, ...formData.uploadedFiles].map((file) => (
-                <div key={file.id} className="flex items-center gap-2">
+                <div key={file.id} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span
-                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ background: "var(--accent)" }}
+                    style={{
+                      width: "4px",
+                      height: "4px",
+                      borderRadius: "50%",
+                      background: "var(--accent)",
+                      flexShrink: 0,
+                    }}
                   />
-                  <p className="text-sm" style={{ color: "var(--foreground)" }}>
-                    {file.name}
-                  </p>
-                  <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                  <p style={{ fontSize: "14px", color: "var(--foreground)" }}>{file.name}</p>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--muted-foreground)",
+                      fontFamily: "var(--font-mono), monospace",
+                    }}
+                  >
                     ({(file.size / 1024).toFixed(0)} KB)
                   </span>
                 </div>
@@ -357,54 +446,103 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
       </div>
 
       {/* Footer CTA */}
-      <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-between items-center">
+      <div
+        style={{
+          marginTop: "48px",
+          paddingTop: "32px",
+          borderTop: "1px solid var(--border)",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "12px",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200"
           style={{
-            background: "var(--surface)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "13px 22px",
+            background: "transparent",
             border: "1px solid var(--border)",
+            borderRadius: "3px",
             color: "var(--muted-foreground)",
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            fontFamily: "var(--font-dm-sans), sans-serif",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.color = "var(--foreground)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.color = "var(--muted-foreground)")
-          }
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "var(--muted-foreground)";
+            e.currentTarget.style.color = "var(--foreground)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "var(--border)";
+            e.currentTarget.style.color = "var(--muted-foreground)";
+          }}
         >
-          <RotateCcw size={14} />
-          Start a new brief
+          <RotateCcw size={13} />
+          New Brief
         </button>
 
-        <div className="flex gap-3">
+        <div style={{ display: "flex", gap: "10px" }}>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200"
             style={{
-              background: "var(--surface)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "13px 22px",
+              background: "transparent",
               border: "1px solid var(--border)",
+              borderRadius: "3px",
               color: copied ? "var(--accent)" : "var(--foreground)",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              fontFamily: "var(--font-dm-sans), sans-serif",
             }}
           >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? "Copied to clipboard!" : "Copy brief"}
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            {copied ? "Copied!" : "Copy Brief"}
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-200"
             style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "13px 28px",
               background: "var(--accent)",
+              border: "1px solid var(--accent)",
+              borderRadius: "3px",
               color: "var(--background)",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              fontFamily: "var(--font-dm-sans), sans-serif",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.opacity = "0.9")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.opacity = "1")
-            }
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--accent-light)";
+              e.currentTarget.style.borderColor = "var(--accent-light)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--accent)";
+              e.currentTarget.style.borderColor = "var(--accent)";
+            }}
           >
-            <Download size={14} />
+            <Download size={13} />
             Download Brief
           </button>
         </div>

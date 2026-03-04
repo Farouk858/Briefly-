@@ -21,7 +21,7 @@ export function TagSelect({ options, selected, onChange, multi = true }: TagSele
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "4px" }}>
       {options.map((opt) => {
         const isSelected = selected.includes(opt.value);
         return (
@@ -29,12 +29,31 @@ export function TagSelect({ options, selected, onChange, multi = true }: TagSele
             key={opt.value}
             type="button"
             onClick={() => toggle(opt.value)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer"
             style={{
-              background: isSelected ? "var(--accent)" : "var(--surface)",
+              padding: "7px 14px",
+              borderRadius: "2px",
+              fontSize: "11px",
+              fontWeight: isSelected ? 600 : 400,
+              fontFamily: "var(--font-dm-sans), sans-serif",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              background: isSelected ? "var(--accent)" : "transparent",
               color: isSelected ? "var(--background)" : "var(--muted-foreground)",
               border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
-              transform: isSelected ? "scale(1.02)" : "scale(1)",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              if (!isSelected) {
+                e.currentTarget.style.borderColor = "var(--accent)";
+                e.currentTarget.style.color = "var(--foreground)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isSelected) {
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.color = "var(--muted-foreground)";
+              }
             }}
           >
             {opt.label}

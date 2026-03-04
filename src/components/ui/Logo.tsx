@@ -5,33 +5,50 @@ interface LogoProps {
 }
 
 export function Logo({ size = "md" }: LogoProps) {
-  const sizes = {
-    sm: { text: "text-lg", sub: "text-[9px]", gap: "gap-1" },
-    md: { text: "text-2xl", sub: "text-[10px]", gap: "gap-1.5" },
-    lg: { text: "text-4xl", sub: "text-xs", gap: "gap-2" },
+  const configs = {
+    sm: { wordmark: "18px", dot: "18px", studio: "8px", gap: "6px" },
+    md: { wordmark: "24px", dot: "24px", studio: "9px", gap: "8px" },
+    lg: { wordmark: "36px", dot: "36px", studio: "11px", gap: "10px" },
   };
 
-  const s = sizes[size];
+  const c = configs[size];
 
   return (
-    <div className={`flex flex-col items-start ${s.gap}`}>
-      <div className="flex items-baseline gap-0.5">
+    <div style={{ display: "flex", flexDirection: "column", gap: c.gap }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "1px" }}>
         <span
-          className={`${s.text} font-bold tracking-tight`}
-          style={{ color: "var(--foreground)", letterSpacing: "-0.04em" }}
+          style={{
+            fontFamily: "var(--font-cormorant), Georgia, serif",
+            fontSize: c.wordmark,
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
+            color: "var(--foreground)",
+            lineHeight: 1,
+          }}
         >
           Briefly
         </span>
         <span
-          className={`${s.text} font-light`}
-          style={{ color: "var(--accent)" }}
+          style={{
+            fontFamily: "var(--font-cormorant), Georgia, serif",
+            fontSize: c.dot,
+            fontWeight: 300,
+            color: "var(--accent)",
+            lineHeight: 1,
+          }}
         >
           .
         </span>
       </div>
       <span
-        className={`${s.sub} font-medium tracking-widest uppercase`}
-        style={{ color: "var(--muted-foreground)" }}
+        style={{
+          fontSize: c.studio,
+          fontWeight: 500,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "var(--muted-foreground)",
+          fontFamily: "var(--font-dm-sans), sans-serif",
+        }}
       >
         Studio 858
       </span>

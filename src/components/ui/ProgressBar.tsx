@@ -10,67 +10,98 @@ export function ProgressBar({ currentStep, totalSteps, stepLabels }: ProgressBar
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
 
   return (
-    <div className="w-full">
-      {/* Step indicators */}
-      <div className="flex justify-between items-center mb-3">
+    <div style={{ width: "100%" }}>
+      {/* Step labels */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+          overflow: "hidden",
+        }}
+      >
         {stepLabels.map((label, index) => {
           const stepNum = index + 1;
           const isCompleted = stepNum < currentStep;
           const isCurrent = stepNum === currentStep;
 
           return (
-            <div key={index} className="flex flex-col items-center gap-1">
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300"
-                style={{
-                  background: isCompleted || isCurrent
-                    ? "var(--accent)"
-                    : "var(--border)",
-                  color: isCompleted || isCurrent
-                    ? "var(--background)"
-                    : "var(--muted-foreground)",
-                  transform: isCurrent ? "scale(1.15)" : "scale(1)",
-                }}
-              >
-                {isCompleted ? "✓" : stepNum}
-              </div>
-              <span
-                className="text-[9px] font-medium tracking-wider uppercase hidden sm:block"
-                style={{
-                  color: isCurrent
-                    ? "var(--accent)"
-                    : isCompleted
-                    ? "var(--foreground)"
-                    : "var(--muted-foreground)",
-                }}
-              >
-                {label}
-              </span>
-            </div>
+            <span
+              key={index}
+              style={{
+                fontSize: "9px",
+                fontWeight: 600,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                fontFamily: "var(--font-dm-sans), sans-serif",
+                color: isCurrent
+                  ? "var(--accent)"
+                  : isCompleted
+                  ? "var(--foreground)"
+                  : "var(--muted-foreground)",
+                opacity: isCompleted ? 0.45 : 1,
+                transition: "all 0.4s ease",
+              }}
+              className="hidden sm:block"
+            >
+              {label}
+            </span>
           );
         })}
       </div>
 
       {/* Progress track */}
       <div
-        className="w-full h-px relative"
-        style={{ background: "var(--border)" }}
+        style={{
+          width: "100%",
+          height: "1px",
+          background: "var(--border)",
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
         <div
-          className="absolute top-0 left-0 h-full transition-all duration-500 ease-out"
           style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            height: "100%",
             width: `${progress}%`,
-            background: "linear-gradient(90deg, var(--accent-dark), var(--accent))",
+            background: "var(--accent)",
+            transition: "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         />
       </div>
 
       {/* Step counter */}
-      <div className="flex justify-between items-center mt-3">
-        <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-          Step {currentStep} of {totalSteps}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "10px",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "11px",
+            color: "var(--muted-foreground)",
+            fontFamily: "var(--font-mono), monospace",
+            letterSpacing: "0.04em",
+          }}
+        >
+          {String(currentStep).padStart(2, "0")} / {String(totalSteps).padStart(2, "0")}
         </span>
-        <span className="text-xs font-medium" style={{ color: "var(--accent)" }}>
+        <span
+          style={{
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "var(--accent)",
+            fontFamily: "var(--font-dm-sans), sans-serif",
+          }}
+        >
           {stepLabels[currentStep - 1]}
         </span>
       </div>

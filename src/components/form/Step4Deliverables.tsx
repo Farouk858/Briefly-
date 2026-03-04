@@ -25,10 +25,20 @@ export function Step4Deliverables({ data, onChange, errors }: Props) {
   return (
     <div className="flex flex-col gap-7 animate-fade-in-up">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight" style={{ color: "var(--foreground)" }}>
+        <h2
+          style={{
+            fontFamily: "var(--font-cormorant), Georgia, serif",
+            fontSize: "clamp(26px, 4vw, 34px)",
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            color: "var(--foreground)",
+            lineHeight: 1.1,
+            marginBottom: "6px",
+          }}
+        >
           Deliverables
         </h2>
-        <p className="text-sm mt-1.5" style={{ color: "var(--muted-foreground)" }}>
+        <p style={{ fontSize: "13px", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
           What exactly do you need at the end of this project?
         </p>
       </div>

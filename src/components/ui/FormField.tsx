@@ -12,23 +12,48 @@ interface FormFieldProps {
 
 export function FormField({ label, hint, required, children, error }: FormFieldProps) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-0.5">
-        <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "var(--foreground)" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: error ? "#c0392b" : "var(--muted-foreground)",
+            fontFamily: "var(--font-dm-sans), sans-serif",
+          }}
+        >
           {label}
           {required && (
-            <span className="text-xs" style={{ color: "var(--accent)" }}>*</span>
+            <span style={{ color: "var(--accent)", fontSize: "14px", lineHeight: 1 }}>·</span>
           )}
         </label>
         {hint && (
-          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--muted-foreground)",
+              lineHeight: 1.5,
+              opacity: 0.7,
+            }}
+          >
             {hint}
           </p>
         )}
       </div>
       {children}
       {error && (
-        <p className="text-xs" style={{ color: "#e05252" }}>
+        <p
+          style={{
+            fontSize: "11px",
+            color: "#c0392b",
+            letterSpacing: "0.02em",
+          }}
+        >
           {error}
         </p>
       )}
@@ -40,23 +65,29 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: boolean;
 }
 
-export function Input({ error, className = "", ...props }: InputProps) {
+export function Input({ error, style: externalStyle, ...props }: InputProps) {
   return (
     <input
       {...props}
-      className={`w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 ${className}`}
       style={{
-        background: "var(--surface)",
-        border: `1px solid ${error ? "#e05252" : "var(--border)"}`,
+        width: "100%",
+        padding: "12px 0",
+        background: "transparent",
+        border: "none",
+        borderBottom: `1px solid ${error ? "#c0392b" : "var(--border)"}`,
         color: "var(--foreground)",
+        fontSize: "14px",
+        fontFamily: "var(--font-dm-sans), sans-serif",
         outline: "none",
+        transition: "border-color 0.25s ease",
+        ...externalStyle,
       }}
       onFocus={(e) => {
-        e.currentTarget.style.borderColor = error ? "#e05252" : "var(--accent)";
+        e.currentTarget.style.borderBottomColor = error ? "#c0392b" : "var(--accent)";
         props.onFocus?.(e);
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = error ? "#e05252" : "var(--border)";
+        e.currentTarget.style.borderBottomColor = error ? "#c0392b" : "var(--border)";
         props.onBlur?.(e);
       }}
     />
@@ -67,24 +98,31 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   error?: boolean;
 }
 
-export function Textarea({ error, className = "", ...props }: TextareaProps) {
+export function Textarea({ error, ...props }: TextareaProps) {
   return (
     <textarea
       {...props}
-      className={`w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 resize-none ${className}`}
       style={{
-        background: "var(--surface)",
-        border: `1px solid ${error ? "#e05252" : "var(--border)"}`,
+        width: "100%",
+        padding: "12px 0",
+        background: "transparent",
+        border: "none",
+        borderBottom: `1px solid ${error ? "#c0392b" : "var(--border)"}`,
         color: "var(--foreground)",
+        fontSize: "14px",
+        fontFamily: "var(--font-dm-sans), sans-serif",
         outline: "none",
-        minHeight: "120px",
+        resize: "none",
+        minHeight: "100px",
+        lineHeight: 1.65,
+        transition: "border-color 0.25s ease",
       }}
       onFocus={(e) => {
-        e.currentTarget.style.borderColor = error ? "#e05252" : "var(--accent)";
+        e.currentTarget.style.borderBottomColor = error ? "#c0392b" : "var(--accent)";
         props.onFocus?.(e);
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = error ? "#e05252" : "var(--border)";
+        e.currentTarget.style.borderBottomColor = error ? "#c0392b" : "var(--border)";
         props.onBlur?.(e);
       }}
     />
