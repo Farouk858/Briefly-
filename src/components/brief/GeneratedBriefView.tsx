@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FileText,
   Target,
@@ -15,6 +15,9 @@ import {
   Check,
   Download,
   RotateCcw,
+  Mail,
+  Loader2,
+  Briefcase,
 } from "lucide-react";
 import type { GeneratedBrief, BriefFormData } from "@/types/brief";
 
@@ -34,17 +37,17 @@ interface SectionProps {
 function Section({ icon, title, children, accentBar = false }: SectionProps) {
   return (
     <div
+      className="glass-surface hover-glow"
       style={{
-        background: "var(--surface-elevated)",
-        border: "1px solid var(--border)",
-        borderRadius: "4px",
-        padding: "28px 32px",
+        borderRadius: "6px",
+        padding: "clamp(20px, 3vw, 32px)",
         position: "relative",
         overflow: "hidden",
       }}
     >
       {accentBar && (
         <div
+          className="accent-glow"
           style={{
             position: "absolute",
             top: 0,
@@ -56,7 +59,7 @@ function Section({ icon, title, children, accentBar = false }: SectionProps) {
         />
       )}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-        <span style={{ color: "var(--accent)", opacity: 0.8, flexShrink: 0 }}>{icon}</span>
+        <span style={{ color: "var(--accent)", opacity: 0.85, flexShrink: 0 }}>{icon}</span>
         <h3
           style={{
             fontSize: "9px",
@@ -77,6 +80,14 @@ function Section({ icon, title, children, accentBar = false }: SectionProps) {
 
 export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefViewProps) {
   const [copied, setCopied] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  // Submit brief to API on mount (once)
+  useEffect(() => {
+    handleSubmitBrief();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString("en-US", {
@@ -86,19 +97,227 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
     });
   };
 
+  const generatePdfBlob = async (): Promise<{ blob: Blob; base64: string }> => {
+    const { jsPDF } = await import("jspdf");
+
+    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentW = pageW - margin * 2;
+    let y = margin;
+
+    // Background
+    doc.setFillColor(4, 4, 4);
+    doc.rect(0, 0, pageW, pageH, "F");
+
+    const checkPageBreak = (needed: number) => {
+      if (y + needed > pageH - margin) {
+        doc.addPage();
+        doc.setFillColor(4, 4, 4);
+        doc.rect(0, 0, pageW, pageH, "F");
+        y = margin;
+      }
+    };
+
+    const drawAccentLine = (xPos: number, yPos: number, w: number) => {
+      doc.setDrawColor(1, 255, 0);
+      doc.setLineWidth(0.3);
+      doc.line(xPos, yPos, xPos + w, yPos);
+    };
+
+    // Header block
+    doc.setFillColor(15, 15, 15);
+    doc.roundedRect(margin - 4, y - 4, contentW + 8, 38, 2, 2, "F");
+    doc.setDrawColor(1, 255, 0);
+    doc.setLineWidth(0.5);
+    doc.line(margin - 4, y - 4, margin - 4, y + 34);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(85, 85, 85);
+    doc.text("BRIEFLY / STUDIO 858", margin + 4, y + 2);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(240, 235, 225);
+    doc.text(formData.projectName || "Untitled Project", margin + 4, y + 14);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(85, 85, 85);
+    const metaParts = [
+      formData.clientName,
+      formData.jobRole,
+      formData.companyName,
+    ].filter(Boolean);
+    doc.text(metaParts.join("  /  "), margin + 4, y + 22);
+    doc.text(`Generated ${formatDate(brief.generatedAt)}`, margin + 4, y + 29);
+
+    y += 48;
+
+    // Sections
+    const addSection = (title: string, content: string | string[]) => {
+      const isArray = Array.isArray(content);
+      const lineCount = isArray
+        ? content.length
+        : doc.splitTextToSize(content, contentW - 12).length;
+      const blockH = 14 + lineCount * 6 + 10;
+      checkPageBreak(blockH);
+
+      doc.setFillColor(8, 8, 8);
+      doc.roundedRect(margin, y, contentW, blockH, 2, 2, "F");
+      drawAccentLine(margin, y + 12, 30);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(85, 85, 85);
+      doc.text(title.toUpperCase(), margin + 4, y + 8);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(208, 202, 194);
+
+      if (isArray) {
+        content.forEach((item, idx) => {
+          doc.setTextColor(1, 255, 0);
+          doc.text(`${idx + 1}`, margin + 4, y + 16 + idx * 6);
+          doc.setTextColor(208, 202, 194);
+          const wrapped = doc.splitTextToSize(item, contentW - 20);
+          doc.text(wrapped, margin + 10, y + 16 + idx * 6);
+        });
+      } else {
+        const wrapped = doc.splitTextToSize(content, contentW - 8);
+        doc.text(wrapped, margin + 4, y + 16);
+      }
+
+      y += blockH + 4;
+    };
+
+    addSection("Project Overview", brief.projectOverview);
+    addSection("Objectives", brief.objectives);
+
+    checkPageBreak(60);
+    const halfW = (contentW - 4) / 2;
+
+    // Two-column row
+    const twoCol = (leftTitle: string, leftContent: string, rightTitle: string, rightContent: string) => {
+      const leftLines = doc.splitTextToSize(leftContent, halfW - 12).length;
+      const rightLines = doc.splitTextToSize(rightContent, halfW - 12).length;
+      const blockH = 14 + Math.max(leftLines, rightLines) * 6 + 10;
+      checkPageBreak(blockH);
+
+      [
+        { title: leftTitle, content: leftContent, x: margin },
+        { title: rightTitle, content: rightContent, x: margin + halfW + 4 },
+      ].forEach(({ title, content, x }) => {
+        doc.setFillColor(8, 8, 8);
+        doc.roundedRect(x, y, halfW, blockH, 2, 2, "F");
+        drawAccentLine(x, y + 12, 24);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(85, 85, 85);
+        doc.text(title.toUpperCase(), x + 4, y + 8);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(208, 202, 194);
+        const wrapped = doc.splitTextToSize(content, halfW - 8);
+        doc.text(wrapped, x + 4, y + 16);
+      });
+
+      y += blockH + 4;
+    };
+
+    twoCol("Target Audience", brief.targetAudience, "Creative Direction", brief.creativeDirection);
+    addSection("Deliverables", brief.deliverables);
+    twoCol("Timeline", brief.timeline, "Budget", brief.budget);
+
+    if (brief.technicalRequirements) {
+      addSection("Technical Requirements", brief.technicalRequirements);
+    }
+
+    if (brief.notes && brief.notes !== "No additional notes provided.") {
+      addSection("Additional Notes", brief.notes);
+    }
+
+    if (brief.references.length > 0) {
+      const refContent = brief.references.map((r) =>
+        `${r.label || r.url}${r.notes ? ` - ${r.notes}` : ""}`
+      );
+      addSection("References", refContent);
+    }
+
+    // Footer
+    checkPageBreak(16);
+    doc.setFontSize(7);
+    doc.setTextColor(40, 40, 40);
+    doc.text("Generated by Briefly / Studio 858", margin, pageH - 10);
+    doc.setTextColor(1, 255, 0);
+    doc.text("studio@858.ie", pageW - margin - 22, pageH - 10);
+
+    const blob = doc.output("blob");
+    const base64 = doc.output("datauristring").split(",")[1];
+    return { blob, base64 };
+  };
+
+  const handleSubmitBrief = async () => {
+    setEmailStatus("sending");
+    try {
+      let pdfBase64: string | undefined;
+      try {
+        const { base64 } = await generatePdfBlob();
+        pdfBase64 = base64;
+      } catch {
+        // PDF generation failure shouldn't block submission
+      }
+
+      const res = await fetch("/api/submit-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formData, brief, pdfBase64 }),
+      });
+
+      if (res.ok) {
+        setEmailStatus("sent");
+      } else {
+        setEmailStatus("error");
+      }
+    } catch {
+      setEmailStatus("error");
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const { blob } = await generatePdfBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `brief-${(formData.projectName || "project").toLowerCase().replace(/\s+/g, "-")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download failed:", err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   const buildCopyText = () => {
     const lines = [
-      `PROJECT BRIEF — ${formData.projectName || "Untitled Project"}`,
-      `Prepared for: ${formData.companyName || formData.clientName}`,
+      `PROJECT BRIEF: ${formData.projectName || "Untitled Project"}`,
+      `Prepared by: ${formData.clientName}${formData.jobRole ? ` (${formData.jobRole})` : ""}`,
+      `Company: ${formData.companyName || "N/A"}`,
       `Generated: ${formatDate(brief.generatedAt)}`,
-      ``,
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
       ``,
       `PROJECT OVERVIEW`,
       brief.projectOverview,
       ``,
       `OBJECTIVES`,
-      ...brief.objectives.map((o) => `• ${o}`),
+      ...brief.objectives.map((o) => `  ${o}`),
       ``,
       `TARGET AUDIENCE`,
       brief.targetAudience,
@@ -107,7 +326,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
       brief.creativeDirection,
       ``,
       `DELIVERABLES`,
-      ...brief.deliverables.map((d) => `• ${d}`),
+      ...brief.deliverables.map((d) => `  ${d}`),
       ``,
       `TIMELINE`,
       brief.timeline,
@@ -118,7 +337,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
       ...(brief.references.length > 0
         ? [
             `REFERENCES`,
-            ...brief.references.map((r) => `• ${r.label}: ${r.url}${r.notes ? ` — ${r.notes}` : ""}`),
+            ...brief.references.map((r) => `  ${r.label}: ${r.url}${r.notes ? ` - ${r.notes}` : ""}`),
             ``,
           ]
         : []),
@@ -128,8 +347,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
       `ADDITIONAL NOTES`,
       brief.notes,
       ``,
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-      `Generated by Briefly — Studio 858`,
+      `Generated by Briefly / Studio 858`,
     ];
     return lines.join("\n");
   };
@@ -140,22 +358,18 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const text = buildCopyText();
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `brief-${(formData.projectName || "project").toLowerCase().replace(/\s+/g, "-")}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const bodyText: React.CSSProperties = {
     fontSize: "14px",
     lineHeight: 1.75,
     color: "var(--foreground)",
     opacity: 0.88,
+  };
+
+  const emailStatusLabel = {
+    idle: null,
+    sending: "Sending brief...",
+    sent: "Brief sent to studio@858.ie",
+    error: "Submission saved locally",
   };
 
   return (
@@ -179,7 +393,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
             marginBottom: "16px",
           }}
         >
-          — Project Brief
+          Project Brief
         </p>
 
         <h1
@@ -190,105 +404,139 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
             letterSpacing: "-0.02em",
             lineHeight: 1.05,
             color: "var(--foreground)",
-            marginBottom: "16px",
+            marginBottom: "12px",
           }}
         >
           {formData.projectName || "Untitled Project"}
         </h1>
 
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: "16px",
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            {(formData.companyName || formData.clientName) && (
-              <p style={{ fontSize: "13px", color: "var(--muted-foreground)", marginBottom: "4px" }}>
-                {formData.companyName || formData.clientName}
-                {formData.clientEmail && (
-                  <span style={{ opacity: 0.6 }}> · {formData.clientEmail}</span>
-                )}
-              </p>
-            )}
-            <p
+        {/* Client meta */}
+        <div style={{ marginBottom: "20px" }}>
+          {(formData.companyName || formData.clientName) && (
+            <p style={{ fontSize: "14px", color: "var(--muted-foreground)", marginBottom: "3px" }}>
+              {formData.companyName || formData.clientName}
+              {formData.jobRole && (
+                <span style={{ opacity: 0.6 }}> &middot; {formData.jobRole}</span>
+              )}
+            </p>
+          )}
+          {formData.clientEmail && (
+            <p style={{ fontSize: "12px", color: "var(--muted-foreground)", opacity: 0.6 }}>
+              {formData.clientEmail}
+            </p>
+          )}
+          <p
+            style={{
+              fontSize: "11px",
+              color: "var(--muted-foreground)",
+              letterSpacing: "0.04em",
+              opacity: 0.5,
+              fontFamily: "var(--font-mono), monospace",
+              marginTop: "4px",
+            }}
+          >
+            Generated {formatDate(brief.generatedAt)}
+          </p>
+        </div>
+
+        {/* Email status */}
+        {emailStatusLabel[emailStatus] && (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              borderRadius: "4px",
+              background: emailStatus === "sent"
+                ? "rgba(1, 255, 0, 0.06)"
+                : emailStatus === "error"
+                ? "rgba(255, 100, 100, 0.06)"
+                : "rgba(240, 235, 225, 0.04)",
+              border: `1px solid ${
+                emailStatus === "sent"
+                  ? "rgba(1, 255, 0, 0.15)"
+                  : emailStatus === "error"
+                  ? "rgba(255, 100, 100, 0.15)"
+                  : "var(--border)"
+              }`,
+              marginBottom: "16px",
+            }}
+          >
+            {emailStatus === "sending" && <Loader2 size={11} className="animate-spin" style={{ color: "var(--muted-foreground)" }} />}
+            {emailStatus === "sent" && <Mail size={11} style={{ color: "var(--accent)" }} />}
+            {emailStatus === "error" && <Mail size={11} style={{ color: "rgba(255,100,100,0.7)" }} />}
+            <span
               style={{
                 fontSize: "11px",
-                color: "var(--muted-foreground)",
-                letterSpacing: "0.04em",
-                opacity: 0.6,
-                fontFamily: "var(--font-mono), monospace",
+                color: emailStatus === "sent" ? "var(--accent)" : "var(--muted-foreground)",
+                fontFamily: "var(--font-dm-sans), sans-serif",
               }}
             >
-              Generated {formatDate(brief.generatedAt)}
-            </p>
+              {emailStatusLabel[emailStatus]}
+            </span>
           </div>
+        )}
 
-          {/* Actions */}
-          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-            <button
-              onClick={handleCopy}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "10px 18px",
-                background: "transparent",
-                border: "1px solid var(--border)",
-                borderRadius: "3px",
-                color: copied ? "var(--accent)" : "var(--muted-foreground)",
-                fontSize: "10px",
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                fontFamily: "var(--font-dm-sans), sans-serif",
-              }}
-              onMouseEnter={(e) => {
-                if (!copied) e.currentTarget.style.borderColor = "var(--accent)";
-              }}
-              onMouseLeave={(e) => {
-                if (!copied) e.currentTarget.style.borderColor = "var(--border)";
-              }}
-            >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
-              {copied ? "Copied!" : "Copy"}
-            </button>
-            <button
-              onClick={handleDownload}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "10px 18px",
-                background: "transparent",
-                border: "1px solid var(--border)",
-                borderRadius: "3px",
-                color: "var(--muted-foreground)",
-                fontSize: "10px",
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                fontFamily: "var(--font-dm-sans), sans-serif",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-            >
-              <Download size={12} />
-              Download
-            </button>
-          </div>
+        {/* Actions */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          <button
+            onClick={handleCopy}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "10px 18px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "3px",
+              color: copied ? "var(--accent)" : "var(--muted-foreground)",
+              fontSize: "10px",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              fontFamily: "var(--font-dm-sans), sans-serif",
+            }}
+            onMouseEnter={(e) => { if (!copied) e.currentTarget.style.borderColor = "var(--accent)"; }}
+            onMouseLeave={(e) => { if (!copied) e.currentTarget.style.borderColor = "var(--border)"; }}
+          >
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+            {copied ? "Copied!" : "Copy"}
+          </button>
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "10px 18px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "3px",
+              color: "var(--muted-foreground)",
+              fontSize: "10px",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              cursor: downloadingPdf ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease",
+              fontFamily: "var(--font-dm-sans), sans-serif",
+              opacity: downloadingPdf ? 0.5 : 1,
+            }}
+            onMouseEnter={(e) => { if (!downloadingPdf) e.currentTarget.style.borderColor = "var(--accent)"; }}
+            onMouseLeave={(e) => { if (!downloadingPdf) e.currentTarget.style.borderColor = "var(--border)"; }}
+          >
+            {downloadingPdf ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+            {downloadingPdf ? "Generating..." : "Download PDF"}
+          </button>
         </div>
       </div>
 
       {/* Brief Sections */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         <Section icon={<FileText size={14} />} title="Project Overview" accentBar>
           <p style={bodyText}>{brief.projectOverview}</p>
         </Section>
@@ -309,7 +557,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
                     flexShrink: 0,
                     marginTop: "2px",
                     color: "var(--accent)",
-                    background: "rgba(196, 160, 107, 0.1)",
+                    background: "rgba(1, 255, 0, 0.08)",
                     borderRadius: "2px",
                     fontFamily: "var(--font-mono), monospace",
                   }}
@@ -326,7 +574,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "12px",
+            gap: "10px",
           }}
         >
           <Section icon={<Users size={14} />} title="Target Audience">
@@ -337,6 +585,37 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
             <p style={bodyText}>{brief.creativeDirection}</p>
           </Section>
         </div>
+
+        {(formData.clientName || formData.jobRole || formData.companyName) && (
+          <Section icon={<Briefcase size={14} />} title="Client Details">
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {formData.clientName && (
+                <p style={bodyText}>
+                  <span style={{ color: "var(--muted-foreground)", fontSize: "12px" }}>Name: </span>
+                  {formData.clientName}
+                </p>
+              )}
+              {formData.jobRole && (
+                <p style={bodyText}>
+                  <span style={{ color: "var(--muted-foreground)", fontSize: "12px" }}>Role: </span>
+                  {formData.jobRole}
+                </p>
+              )}
+              {formData.companyName && (
+                <p style={bodyText}>
+                  <span style={{ color: "var(--muted-foreground)", fontSize: "12px" }}>Company: </span>
+                  {formData.companyName}
+                </p>
+              )}
+              {formData.clientEmail && (
+                <p style={bodyText}>
+                  <span style={{ color: "var(--muted-foreground)", fontSize: "12px" }}>Email: </span>
+                  {formData.clientEmail}
+                </p>
+              )}
+            </div>
+          </Section>
+        )}
 
         <Section icon={<Package size={14} />} title="Deliverables">
           <ul style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -350,6 +629,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
                     background: "var(--accent)",
                     flexShrink: 0,
                     marginTop: "9px",
+                    boxShadow: "0 0 6px rgba(1, 255, 0, 0.5)",
                   }}
                 />
                 <p style={bodyText}>{d}</p>
@@ -362,7 +642,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "12px",
+            gap: "10px",
           }}
         >
           <Section icon={<Clock size={14} />} title="Timeline">
@@ -490,7 +770,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
           New Brief
         </button>
 
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <button
             onClick={handleCopy}
             style={{
@@ -515,7 +795,9 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
             {copied ? "Copied!" : "Copy Brief"}
           </button>
           <button
-            onClick={handleDownload}
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            className="glow-button"
             style={{
               display: "flex",
               alignItems: "center",
@@ -529,21 +811,24 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
               fontWeight: 700,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              cursor: "pointer",
+              cursor: downloadingPdf ? "not-allowed" : "pointer",
               transition: "all 0.2s ease",
               fontFamily: "var(--font-dm-sans), sans-serif",
+              opacity: downloadingPdf ? 0.6 : 1,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--accent-light)";
-              e.currentTarget.style.borderColor = "var(--accent-light)";
+              if (!downloadingPdf) {
+                e.currentTarget.style.background = "var(--accent-light)";
+                e.currentTarget.style.borderColor = "var(--accent-light)";
+              }
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "var(--accent)";
               e.currentTarget.style.borderColor = "var(--accent)";
             }}
           >
-            <Download size={13} />
-            Download Brief
+            {downloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+            {downloadingPdf ? "Generating PDF..." : "Download PDF"}
           </button>
         </div>
       </div>

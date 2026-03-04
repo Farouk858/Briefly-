@@ -68,6 +68,17 @@ export function Step1Project({ data, onChange, errors }: Props) {
       </div>
 
       <FormField
+        label="Job Role / Title"
+        hint="Your position or role within the organisation"
+      >
+        <Input
+          value={data.jobRole}
+          onChange={(e) => onChange({ jobRole: e.target.value })}
+          placeholder="e.g. Creative Director, Marketing Manager, Founder"
+        />
+      </FormField>
+
+      <FormField
         label="Company / Brand Name"
         hint="The brand or organisation this project is for"
       >
@@ -109,7 +120,7 @@ export function Step1Project({ data, onChange, errors }: Props) {
         <Textarea
           value={data.projectDescription}
           onChange={(e) => onChange({ projectDescription: e.target.value })}
-          placeholder="We're launching a new product and need a full brand identity system — logo, colours, typography, and brand guidelines. The brand should feel premium and modern, aimed at professionals aged 28–45..."
+          placeholder="We're launching a new product and need a full brand identity system - logo, colours, typography, and brand guidelines. The brand should feel premium and modern, aimed at professionals aged 28-45..."
           rows={5}
           error={!!errors.projectDescription}
         />

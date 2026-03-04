@@ -45,7 +45,7 @@ export function Step4Deliverables({ data, onChange, errors }: Props) {
 
       <FormField
         label="List of Deliverables"
-        hint="Be as specific as possible — what files, assets, or outputs do you expect to receive?"
+        hint="Be as specific as possible: what files, assets, or outputs do you expect to receive?"
         required
         error={errors.deliverables}
       >
@@ -95,12 +95,12 @@ export function Step4Deliverables({ data, onChange, errors }: Props) {
       <div
         className="rounded-lg p-4"
         style={{
-          background: "rgba(201, 169, 110, 0.06)",
-          border: "1px solid rgba(201, 169, 110, 0.2)",
+          background: "rgba(1, 255, 0, 0.04)",
+          border: "1px solid rgba(1, 255, 0, 0.12)",
         }}
       >
         <p className="text-xs" style={{ color: "var(--accent-light)" }}>
-          <span className="font-semibold">Tip:</span> The more specific you are about deliverables, the more accurate your brief and timeline estimate will be. Include quantities where relevant — e.g. &quot;5 social post templates&quot; rather than &quot;social posts&quot;.
+          <span className="font-semibold">Tip:</span> The more specific you are about deliverables, the more accurate your brief and timeline estimate will be. Include quantities where relevant, e.g. &quot;5 social post templates&quot; rather than &quot;social posts&quot;.
         </p>
       </div>
     </div>

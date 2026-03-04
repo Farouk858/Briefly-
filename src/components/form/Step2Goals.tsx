@@ -87,12 +87,12 @@ export function Step2Goals({ data, onChange, errors }: Props) {
 
       <FormField
         label="Competitor Brands"
-        hint="Name brands in the same space — this helps us understand the landscape you operate in"
+        hint="Name brands in the same space (this helps us understand the landscape you operate in)"
       >
         <Textarea
           value={data.competitorBrands}
           onChange={(e) => onChange({ competitorBrands: e.target.value })}
-          placeholder="Competitor A, Competitor B, Competitor C — we want to feel more premium than them but more approachable than..."
+          placeholder="Competitor A, Competitor B, Competitor C - we want to feel more premium than them but more approachable than..."
           rows={2}
         />
       </FormField>

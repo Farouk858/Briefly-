@@ -64,7 +64,7 @@ export function Step3Creative({ data, onChange, errors }: Props) {
 
       <FormField
         label="Visual Style"
-        hint="Describe the visual aesthetic you have in mind — or the direction you&apos;d like to explore"
+        hint="Describe the visual aesthetic you have in mind - or the direction you&apos;d like to explore"
       >
         <Textarea
           value={data.visualStyle}
@@ -82,7 +82,7 @@ export function Step3Creative({ data, onChange, errors }: Props) {
           <Input
             value={data.colorsToUse}
             onChange={(e) => onChange({ colorsToUse: e.target.value })}
-            placeholder="e.g. Navy blue, gold, white — or #1a2b3c"
+            placeholder="e.g. Navy blue, gold, white - or #1a2b3c"
           />
         </FormField>
 
@@ -100,7 +100,7 @@ export function Step3Creative({ data, onChange, errors }: Props) {
 
       <FormField
         label="Must Include"
-        hint="Anything that must appear in the final work — logos, taglines, specific elements"
+        hint="Anything that must appear in the final work: logos, taglines, specific elements"
       >
         <Textarea
           value={data.mustInclude}

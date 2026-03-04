@@ -85,7 +85,7 @@ export function FileUpload({
         className="relative rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer"
         style={{
           borderColor: isDragging ? "var(--accent)" : "var(--border)",
-          background: isDragging ? "rgba(201, 169, 110, 0.05)" : "var(--surface)",
+          background: isDragging ? "rgba(1, 255, 0, 0.04)" : "var(--surface)",
           padding: "32px 24px",
         }}
         onClick={() => document.getElementById(`file-input-${label}`)?.click()}

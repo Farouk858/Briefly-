@@ -83,8 +83,15 @@ export function generateBrief(data: BriefFormData): GeneratedBrief {
 function buildProjectOverview(data: BriefFormData, projectTypes: string): string {
   const client = data.companyName || data.clientName || "The client";
   const project = data.projectName || "this project";
+  const contact = data.jobRole
+    ? `${data.clientName} (${data.jobRole})`
+    : data.clientName;
 
   let overview = `${client} requires ${projectTypes} for ${project}.`;
+
+  if (contact && contact !== client) {
+    overview += ` Brief submitted by ${contact}.`;
+  }
 
   if (data.projectDescription) {
     overview += ` ${data.projectDescription}`;

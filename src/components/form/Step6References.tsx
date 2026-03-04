@@ -29,7 +29,7 @@ export function Step6References({ data, onChange, errors }: Props) {
           References & Assets
         </h2>
         <p style={{ fontSize: "13px", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
-          Share anything that will help us understand your vision — the more context, the better.
+          Share anything that will help us understand your vision. The more context, the better.
         </p>
       </div>
 
@@ -47,7 +47,7 @@ export function Step6References({ data, onChange, errors }: Props) {
       {/* Existing Brief Upload */}
       <FormField
         label="Existing Brief or Brief Documents"
-        hint="If you already have a brief, scope document, or any written notes — upload them here"
+        hint="If you already have a brief, scope document, or any written notes - upload them here"
       >
         <FileUpload
           files={data.existingBrief}
@@ -89,8 +89,8 @@ export function Step6References({ data, onChange, errors }: Props) {
       <div
         className="rounded-lg p-4"
         style={{
-          background: "rgba(201, 169, 110, 0.06)",
-          border: "1px solid rgba(201, 169, 110, 0.2)",
+          background: "rgba(1, 255, 0, 0.04)",
+          border: "1px solid rgba(1, 255, 0, 0.12)",
         }}
       >
         <p className="text-xs" style={{ color: "var(--accent-light)" }}>

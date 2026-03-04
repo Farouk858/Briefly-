@@ -1,27 +1,11 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Briefly — Client Brief Intake",
+  title: "Briefly: Client Brief Intake",
   description: "Tell us about your project. We'll turn it into a clear, actionable brief.",
   openGraph: {
-    title: "Briefly — Client Brief Intake",
+    title: "Briefly: Client Brief Intake",
     description: "Tell us about your project. We'll turn it into a clear, actionable brief.",
   },
 };
@@ -32,13 +16,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${dmSans.variable}`}>
+    <html lang="en">
+      <head>
+        {/* Google Fonts - loaded with display=swap for graceful fallback */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
         className="antialiased"
         style={{
           background: "var(--background)",
           color: "var(--foreground)",
-          fontFamily: "var(--font-dm-sans), -apple-system, BlinkMacSystemFont, sans-serif",
         }}
       >
         {children}

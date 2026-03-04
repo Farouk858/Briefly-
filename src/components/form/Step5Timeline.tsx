@@ -93,7 +93,7 @@ export function Step5Timeline({ data, onChange, errors }: Props) {
 
       <FormField
         label="Budget Notes"
-        hint="Any context around the budget — constraints, flexibility, what&apos;s included"
+        hint="Any context around the budget - constraints, flexibility, what&apos;s included"
       >
         <Textarea
           value={data.budgetNotes}
@@ -115,7 +115,7 @@ export function Step5Timeline({ data, onChange, errors }: Props) {
           How we use this information
         </p>
         <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-          Your timeline and budget help us accurately scope the project, allocate the right resources, and build a realistic project plan. There&apos;s no wrong answer — honesty here leads to better outcomes for everyone.
+          Your timeline and budget help us accurately scope the project, allocate the right resources, and build a realistic project plan. There&apos;s no wrong answer - honesty here leads to better outcomes for everyone.
         </p>
       </div>
     </div>

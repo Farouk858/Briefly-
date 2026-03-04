@@ -21,6 +21,7 @@ const TOTAL_STEPS = 6;
 const defaultFormData: BriefFormData = {
   clientName: "",
   clientEmail: "",
+  jobRole: "",
   companyName: "",
   projectName: "",
   projectType: [],
@@ -128,7 +129,7 @@ export default function Home() {
       return;
     }
     setIsGenerating(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1400));
     const brief = generateBrief(formData);
     setGeneratedBrief(brief);
     setIsGenerating(false);
@@ -147,20 +148,60 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)" }}>
-      {/* Ambient glow */}
+      {/* Ambient background */}
+      <div
+        className="aurora-bg"
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
       <div
         style={{
           position: "fixed",
           inset: 0,
           pointerEvents: "none",
           background:
-            "radial-gradient(ellipse 70% 40% at 50% -10%, rgba(196, 160, 107, 0.06) 0%, transparent 60%)",
+            "radial-gradient(ellipse 70% 40% at 50% -10%, rgba(1, 255, 0, 0.04) 0%, transparent 60%)",
+          zIndex: 0,
+        }}
+      />
+
+      {/* Fluid liquid blobs */}
+      <div
+        style={{
+          position: "fixed",
+          top: "20%",
+          left: "5%",
+          width: "clamp(200px, 30vw, 480px)",
+          height: "clamp(200px, 30vw, 480px)",
+          background: "radial-gradient(circle, rgba(1, 255, 0, 0.025) 0%, transparent 70%)",
+          filter: "blur(60px)",
+          animation: "liquidFlow 18s ease-in-out infinite",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          bottom: "15%",
+          right: "8%",
+          width: "clamp(150px, 24vw, 360px)",
+          height: "clamp(150px, 24vw, 360px)",
+          background: "radial-gradient(circle, rgba(1, 255, 0, 0.018) 0%, transparent 70%)",
+          filter: "blur(50px)",
+          animation: "liquidFlow 22s ease-in-out infinite reverse",
+          pointerEvents: "none",
           zIndex: 0,
         }}
       />
 
       {/* Header */}
       <header
+        className="liquid-glass"
         style={{
           position: "sticky",
           top: 0,
@@ -170,55 +211,78 @@ export default function Home() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "rgba(4, 4, 4, 0.92)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid var(--border)",
         }}
       >
         <Logo size="sm" />
 
-        {!generatedBrief && (
-          <span
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          {!generatedBrief && (
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "var(--muted-foreground)",
+                fontFamily: "var(--font-dm-sans), sans-serif",
+              }}
+            >
+              Client Brief
+            </span>
+          )}
+
+          {generatedBrief && (
+            <button
+              onClick={handleReset}
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                letterSpacing: "0.08em",
+                color: "var(--muted-foreground)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                transition: "color 0.2s ease",
+                fontFamily: "var(--font-dm-sans), sans-serif",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted-foreground)")}
+            >
+              &larr; New Brief
+            </button>
+          )}
+
+          <a
+            href="/portal"
             style={{
               fontSize: "10px",
               fontWeight: 600,
-              letterSpacing: "0.2em",
+              letterSpacing: "0.1em",
               textTransform: "uppercase",
               color: "var(--muted-foreground)",
-              fontFamily: "var(--font-dm-sans), sans-serif",
-            }}
-          >
-            Client Brief
-          </span>
-        )}
-
-        {generatedBrief && (
-          <button
-            onClick={handleReset}
-            style={{
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.08em",
-              color: "var(--muted-foreground)",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
+              textDecoration: "none",
               transition: "color 0.2s ease",
               fontFamily: "var(--font-dm-sans), sans-serif",
+              opacity: 0.6,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted-foreground)")}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.color = "var(--accent)";
+              (e.currentTarget as HTMLAnchorElement).style.opacity = "1";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted-foreground)";
+              (e.currentTarget as HTMLAnchorElement).style.opacity = "0.6";
+            }}
           >
-            ← New Brief
-          </button>
-        )}
+            Portal
+          </a>
+        </div>
       </header>
 
       {/* Main */}
       <main
         style={{
-          maxWidth: "680px",
+          maxWidth: "clamp(600px, 70vw, 860px)",
           margin: "0 auto",
           padding: "clamp(32px, 6vw, 72px) clamp(20px, 5vw, 40px)",
           position: "relative",
@@ -233,7 +297,7 @@ export default function Home() {
         {/* Intake Form */}
         {!generatedBrief && (
           <>
-            {/* Hero — step 1 only */}
+            {/* Hero - step 1 only */}
             <AnimatePresence>
               {currentStep === 1 && (
                 <motion.div
@@ -255,12 +319,12 @@ export default function Home() {
                       marginBottom: "20px",
                     }}
                   >
-                    — Client Brief
+                    Client Brief
                   </p>
                   <h1
                     style={{
                       fontFamily: "var(--font-cormorant), Georgia, serif",
-                      fontSize: "clamp(44px, 9vw, 80px)",
+                      fontSize: "clamp(44px, 9vw, 88px)",
                       fontWeight: 600,
                       lineHeight: 1.04,
                       letterSpacing: "-0.02em",
@@ -276,20 +340,20 @@ export default function Home() {
                   </h1>
                   <p
                     style={{
-                      fontSize: "14px",
+                      fontSize: "15px",
                       lineHeight: 1.75,
                       color: "var(--muted-foreground)",
-                      maxWidth: "380px",
+                      maxWidth: "440px",
                     }}
                   >
                     Fill in the details below and we&apos;ll compile everything into a clean,
-                    structured brief — ready to share.
+                    structured brief - ready to share.
                   </p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Step counter for steps 2–6 */}
+            {/* Step counter for steps 2-6 */}
             <AnimatePresence>
               {currentStep > 1 && (
                 <motion.div
@@ -334,11 +398,10 @@ export default function Home() {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="glass-surface hover-glow"
                 style={{
-                  background: "var(--surface-elevated)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "4px",
-                  padding: "clamp(28px, 5vw, 48px) clamp(24px, 5vw, 44px)",
+                  borderRadius: "6px",
+                  padding: "clamp(28px, 5vw, 52px) clamp(24px, 5vw, 48px)",
                   marginBottom: "20px",
                 }}
               >
@@ -393,12 +456,13 @@ export default function Home() {
                   }
                 }}
               >
-                ← Back
+                &larr; Back
               </button>
 
               {currentStep < TOTAL_STEPS ? (
                 <button
                   onClick={handleNext}
+                  className="glow-button"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -425,12 +489,13 @@ export default function Home() {
                     e.currentTarget.style.borderColor = "var(--accent)";
                   }}
                 >
-                  Continue →
+                  Continue &rarr;
                 </button>
               ) : (
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
+                  className="glow-button"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -473,7 +538,7 @@ export default function Home() {
                 opacity: 0.6,
               }}
             >
-              Fields marked with <span style={{ color: "var(--accent)" }}>·</span> are required
+              Fields marked with <span style={{ color: "var(--accent)" }}>&#xB7;</span> are required
             </p>
           </>
         )}
@@ -489,6 +554,8 @@ export default function Home() {
           flexDirection: "column",
           alignItems: "center",
           gap: "12px",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <Logo size="sm" />
@@ -500,7 +567,7 @@ export default function Home() {
             opacity: 0.6,
           }}
         >
-          © {new Date().getFullYear()} Studio 858. All rights reserved.
+          &copy; {new Date().getFullYear()} Studio 858. All rights reserved.
         </p>
       </footer>
     </div>

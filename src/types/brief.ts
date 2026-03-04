@@ -58,6 +58,7 @@ export interface BriefFormData {
   // Step 1: About the Project
   clientName: string;
   clientEmail: string;
+  jobRole: string;
   companyName: string;
   projectName: string;
   projectType: ProjectType[];
