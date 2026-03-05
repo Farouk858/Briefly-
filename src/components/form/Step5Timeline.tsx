@@ -14,12 +14,12 @@ const TIMELINE_OPTIONS: { value: Timeline; label: string }[] = [
 ];
 
 const BUDGET_OPTIONS: { value: BudgetRange; label: string }[] = [
-  { value: "under-5k", label: "Under $5k" },
-  { value: "5k-15k", label: "$5k – $15k" },
-  { value: "15k-30k", label: "$15k – $30k" },
-  { value: "30k-50k", label: "$30k – $50k" },
-  { value: "50k-100k", label: "$50k – $100k" },
-  { value: "100k-plus", label: "$100k+" },
+  { value: "under-5k", label: "Under £5k" },
+  { value: "5k-15k", label: "£5k – £15k" },
+  { value: "15k-30k", label: "£15k – £30k" },
+  { value: "30k-50k", label: "£30k – £50k" },
+  { value: "50k-100k", label: "£50k – £100k" },
+  { value: "100k-plus", label: "£100k+" },
   { value: "tbd", label: "To Discuss" },
 ];
 

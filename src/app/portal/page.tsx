@@ -410,6 +410,23 @@ export default function Portal() {
   const [selected, setSelected] = useState<Submission | null>(null);
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [authed, setAuthed] = useState(false);
+
+  // Auth guard — redirect to login if not authenticated
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (sessionStorage.getItem("portal_auth") === "1") {
+        setAuthed(true);
+      } else {
+        window.location.href = "/portal/login";
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("portal_auth");
+    window.location.href = "/portal/login";
+  };
 
   const fetchSubmissions = useCallback(async () => {
     setLoading(true);
@@ -476,6 +493,9 @@ export default function Portal() {
   }).length;
 
   const uniqueClients = new Set(submissions.map((s) => s.formData.companyName || s.formData.clientName)).size;
+
+  // Don't render until auth is confirmed (prevents flash)
+  if (!authed) return null;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--background)" }}>
@@ -602,6 +622,36 @@ export default function Portal() {
           >
             New Brief
           </a>
+          <button
+            onClick={handleLogout}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 14px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "3px",
+              color: "var(--muted-foreground)",
+              fontSize: "10px",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              fontFamily: "var(--font-dm-sans), sans-serif",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,80,80,0.4)";
+              e.currentTarget.style.color = "rgba(255,100,100,0.9)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--border)";
+              e.currentTarget.style.color = "var(--muted-foreground)";
+            }}
+          >
+            Log out
+          </button>
         </div>
       </header>
 

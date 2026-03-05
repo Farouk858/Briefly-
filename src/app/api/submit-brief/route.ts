@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+
+export const maxDuration = 30;
+// Raise body size limit to 10 MB so PDF attachment can be included
+export const dynamic = "force-dynamic";
 import path from "path";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
@@ -24,7 +28,7 @@ function writeSubmissions(submissions: object[]) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { formData, brief, pdfBase64 } = body;
+    const { formData, brief } = body;
 
     // Save submission
     const submissions = readSubmissions();
@@ -65,12 +69,12 @@ export async function POST(req: NextRequest) {
     body { font-family: -apple-system, sans-serif; background: #040404; color: #f0ebe1; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 40px 24px; }
     .header { border-bottom: 1px solid #1e1e1e; padding-bottom: 24px; margin-bottom: 32px; }
-    .logo { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #555; }
+    .logo { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #909090; }
     .logo span { color: #01ff00; }
     h1 { font-size: 28px; font-weight: 600; color: #f0ebe1; margin: 16px 0 4px; }
-    .meta { font-size: 13px; color: #555; }
+    .meta { font-size: 13px; color: #909090; }
     .section { margin-bottom: 24px; }
-    .section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #555; margin-bottom: 8px; }
+    .section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #909090; margin-bottom: 8px; }
     .section-content { font-size: 14px; line-height: 1.75; color: #d0cac2; }
     .tag { display: inline-block; padding: 3px 10px; background: rgba(1,255,0,0.1); border: 1px solid rgba(1,255,0,0.2); border-radius: 2px; font-size: 11px; color: #01ff00; margin: 2px; }
     .footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid #1e1e1e; font-size: 11px; color: #333; text-align: center; }
@@ -142,23 +146,12 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`;
 
-      const attachments = [];
-      if (pdfBase64) {
-        attachments.push({
-          filename: `brief-${projectName.toLowerCase().replace(/\s+/g, "-")}.pdf`,
-          content: pdfBase64,
-          encoding: "base64",
-          contentType: "application/pdf",
-        });
-      }
-
       await transporter.sendMail({
         from: `"Briefly / Studio 858" <${smtpUser}>`,
         to: "studio@858.ie",
         replyTo: clientEmail || undefined,
         subject: `New Brief: ${projectName}${companyName ? ` / ${companyName}` : ""}`,
         html: emailHtml,
-        attachments,
       });
     }
 

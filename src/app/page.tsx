@@ -252,30 +252,6 @@ export default function Home() {
             </button>
           )}
 
-          <a
-            href="/portal"
-            style={{
-              fontSize: "10px",
-              fontWeight: 600,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--muted-foreground)",
-              textDecoration: "none",
-              transition: "color 0.2s ease",
-              fontFamily: "var(--font-dm-sans), sans-serif",
-              opacity: 0.6,
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.color = "var(--accent)";
-              (e.currentTarget as HTMLAnchorElement).style.opacity = "1";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted-foreground)";
-              (e.currentTarget as HTMLAnchorElement).style.opacity = "0.6";
-            }}
-          >
-            Portal
-          </a>
         </div>
       </header>
 
