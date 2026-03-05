@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   FileText,
   Target,
@@ -80,14 +80,8 @@ function Section({ icon, title, children, accentBar = false }: SectionProps) {
 
 export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefViewProps) {
   const [copied, setCopied] = useState(false);
-  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "sending" | "saved" | "error">("idle");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-
-  // Submit brief to API on mount (once)
-  useEffect(() => {
-    handleSubmitBrief();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString("en-US", {
@@ -135,7 +129,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    doc.setTextColor(144, 144, 144);
+    doc.setTextColor(180, 180, 180);
     doc.text("BRIEFLY / STUDIO 858", margin + 4, y + 2);
 
     doc.setFont("helvetica", "bold");
@@ -145,7 +139,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setTextColor(144, 144, 144);
+    doc.setTextColor(180, 180, 180);
     const metaParts = [
       formData.clientName,
       formData.jobRole,
@@ -171,7 +165,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.setTextColor(144, 144, 144);
+      doc.setTextColor(180, 180, 180);
       doc.text(title.toUpperCase(), margin + 4, y + 8);
 
       doc.setFont("helvetica", "normal");
@@ -217,7 +211,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
-        doc.setTextColor(144, 144, 144);
+        doc.setTextColor(180, 180, 180);
         doc.text(title.toUpperCase(), x + 4, y + 8);
 
         doc.setFont("helvetica", "normal");
@@ -263,23 +257,17 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
   };
 
   const handleSubmitBrief = async () => {
-    setEmailStatus("sending");
+    if (submitStatus === "sending" || submitStatus === "saved") return;
+    setSubmitStatus("sending");
     try {
-      // Do NOT include the PDF in the request body — it can exceed 1 MB and
-      // cause a 413 error. The email is sent with rich HTML content only.
       const res = await fetch("/api/submit-brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ formData, brief }),
       });
-
-      if (res.ok) {
-        setEmailStatus("sent");
-      } else {
-        setEmailStatus("error");
-      }
+      setSubmitStatus(res.ok ? "saved" : "error");
     } catch {
-      setEmailStatus("error");
+      setSubmitStatus("error");
     }
   };
 
@@ -356,14 +344,13 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
     fontSize: "14px",
     lineHeight: 1.75,
     color: "var(--foreground)",
-    opacity: 0.88,
   };
 
-  const emailStatusLabel = {
+  const submitLabel = {
     idle: null,
-    sending: "Sending brief...",
-    sent: "Brief sent to studio@858.ie",
-    error: "Submission saved locally",
+    sending: "Saving...",
+    saved: "Saved to portal",
+    error: "Save failed — try again",
   };
 
   return (
@@ -433,8 +420,8 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
           </p>
         </div>
 
-        {/* Email status */}
-        {emailStatusLabel[emailStatus] && (
+        {/* Submit status badge (shown only after an attempt) */}
+        {submitLabel[submitStatus] && (
           <div
             style={{
               display: "inline-flex",
@@ -442,32 +429,32 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
               gap: "6px",
               padding: "6px 12px",
               borderRadius: "4px",
-              background: emailStatus === "sent"
+              background: submitStatus === "saved"
                 ? "rgba(1, 255, 0, 0.06)"
-                : emailStatus === "error"
+                : submitStatus === "error"
                 ? "rgba(255, 100, 100, 0.06)"
                 : "rgba(240, 235, 225, 0.04)",
               border: `1px solid ${
-                emailStatus === "sent"
+                submitStatus === "saved"
                   ? "rgba(1, 255, 0, 0.15)"
-                  : emailStatus === "error"
+                  : submitStatus === "error"
                   ? "rgba(255, 100, 100, 0.15)"
                   : "var(--border)"
               }`,
               marginBottom: "16px",
             }}
           >
-            {emailStatus === "sending" && <Loader2 size={11} className="animate-spin" style={{ color: "var(--muted-foreground)" }} />}
-            {emailStatus === "sent" && <Mail size={11} style={{ color: "var(--accent)" }} />}
-            {emailStatus === "error" && <Mail size={11} style={{ color: "rgba(255,100,100,0.7)" }} />}
+            {submitStatus === "sending" && <Loader2 size={11} className="animate-spin" style={{ color: "var(--muted-foreground)" }} />}
+            {submitStatus === "saved" && <Check size={11} style={{ color: "var(--accent)" }} />}
+            {submitStatus === "error" && <Mail size={11} style={{ color: "rgba(255,100,100,0.7)" }} />}
             <span
               style={{
                 fontSize: "11px",
-                color: emailStatus === "sent" ? "var(--accent)" : "var(--muted-foreground)",
+                color: submitStatus === "saved" ? "var(--accent)" : submitStatus === "error" ? "rgba(255,120,120,0.9)" : "var(--muted-foreground)",
                 fontFamily: "var(--font-dm-sans), sans-serif",
               }}
             >
-              {emailStatusLabel[emailStatus]}
+              {submitLabel[submitStatus]}
             </span>
           </div>
         )}
@@ -726,56 +713,76 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
           paddingTop: "32px",
           borderTop: "1px solid var(--border)",
           display: "flex",
-          flexWrap: "wrap",
-          gap: "12px",
-          justifyContent: "space-between",
-          alignItems: "center",
+          flexDirection: "column",
+          gap: "16px",
         }}
       >
+        {/* Primary action — Save to Portal */}
         <button
-          onClick={onReset}
+          onClick={handleSubmitBrief}
+          disabled={submitStatus === "sending" || submitStatus === "saved"}
+          className={submitStatus !== "saved" ? "glow-button" : undefined}
           style={{
+            width: "100%",
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            padding: "13px 22px",
-            background: "transparent",
-            border: "1px solid var(--border)",
-            borderRadius: "3px",
-            color: "var(--muted-foreground)",
-            fontSize: "11px",
-            fontWeight: 600,
-            letterSpacing: "0.1em",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "16px 28px",
+            background: submitStatus === "saved"
+              ? "rgba(1, 255, 0, 0.08)"
+              : "var(--accent)",
+            border: `1px solid ${submitStatus === "saved" ? "rgba(1,255,0,0.25)" : "var(--accent)"}`,
+            borderRadius: "4px",
+            color: submitStatus === "saved" ? "var(--accent)" : "var(--background)",
+            fontSize: "12px",
+            fontWeight: 700,
+            letterSpacing: "0.14em",
             textTransform: "uppercase",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
+            cursor: submitStatus === "sending" || submitStatus === "saved" ? "not-allowed" : "pointer",
+            transition: "all 0.25s ease",
             fontFamily: "var(--font-dm-sans), sans-serif",
+            opacity: submitStatus === "sending" ? 0.7 : 1,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--muted-foreground)";
-            e.currentTarget.style.color = "var(--foreground)";
+            if (submitStatus === "idle" || submitStatus === "error") {
+              e.currentTarget.style.background = "var(--accent-light)";
+              e.currentTarget.style.borderColor = "var(--accent-light)";
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--border)";
-            e.currentTarget.style.color = "var(--muted-foreground)";
+            if (submitStatus === "idle" || submitStatus === "error") {
+              e.currentTarget.style.background = "var(--accent)";
+              e.currentTarget.style.borderColor = "var(--accent)";
+            }
           }}
         >
-          <RotateCcw size={13} />
-          New Brief
+          {submitStatus === "sending" && <Loader2 size={14} className="animate-spin" />}
+          {submitStatus === "saved" && <Check size={14} />}
+          {submitStatus === "error" && <Mail size={14} />}
+          {submitStatus === "idle" && <Mail size={14} />}
+          {submitStatus === "saved"
+            ? "Brief saved to portal"
+            : submitStatus === "sending"
+            ? "Saving to portal..."
+            : submitStatus === "error"
+            ? "Retry — save to portal"
+            : "Save to portal"}
         </button>
 
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        {/* Secondary actions */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "space-between", alignItems: "center" }}>
           <button
-            onClick={handleCopy}
+            onClick={onReset}
             style={{
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              padding: "13px 22px",
+              padding: "12px 20px",
               background: "transparent",
               border: "1px solid var(--border)",
               borderRadius: "3px",
-              color: copied ? "var(--accent)" : "var(--foreground)",
+              color: "var(--muted-foreground)",
               fontSize: "11px",
               fontWeight: 600,
               letterSpacing: "0.1em",
@@ -784,46 +791,71 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
               transition: "all 0.2s ease",
               fontFamily: "var(--font-dm-sans), sans-serif",
             }}
-          >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-            {copied ? "Copied!" : "Copy Brief"}
-          </button>
-          <button
-            onClick={handleDownloadPdf}
-            disabled={downloadingPdf}
-            className="glow-button"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "13px 28px",
-              background: "var(--accent)",
-              border: "1px solid var(--accent)",
-              borderRadius: "3px",
-              color: "var(--background)",
-              fontSize: "11px",
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              cursor: downloadingPdf ? "not-allowed" : "pointer",
-              transition: "all 0.2s ease",
-              fontFamily: "var(--font-dm-sans), sans-serif",
-              opacity: downloadingPdf ? 0.6 : 1,
-            }}
             onMouseEnter={(e) => {
-              if (!downloadingPdf) {
-                e.currentTarget.style.background = "var(--accent-light)";
-                e.currentTarget.style.borderColor = "var(--accent-light)";
-              }
+              e.currentTarget.style.borderColor = "var(--muted-foreground)";
+              e.currentTarget.style.color = "var(--foreground)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--accent)";
-              e.currentTarget.style.borderColor = "var(--accent)";
+              e.currentTarget.style.borderColor = "var(--border)";
+              e.currentTarget.style.color = "var(--muted-foreground)";
             }}
           >
-            {downloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-            {downloadingPdf ? "Generating PDF..." : "Download PDF"}
+            <RotateCcw size={12} />
+            New Brief
           </button>
+
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              onClick={handleCopy}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 20px",
+                background: "transparent",
+                border: "1px solid var(--border)",
+                borderRadius: "3px",
+                color: copied ? "var(--accent)" : "var(--foreground)",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                fontFamily: "var(--font-dm-sans), sans-serif",
+              }}
+            >
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? "Copied!" : "Copy Brief"}
+            </button>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 20px",
+                background: "transparent",
+                border: "1px solid var(--border)",
+                borderRadius: "3px",
+                color: "var(--foreground)",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                cursor: downloadingPdf ? "not-allowed" : "pointer",
+                transition: "all 0.2s ease",
+                fontFamily: "var(--font-dm-sans), sans-serif",
+                opacity: downloadingPdf ? 0.6 : 1,
+              }}
+              onMouseEnter={(e) => { if (!downloadingPdf) e.currentTarget.style.borderColor = "var(--accent)"; }}
+              onMouseLeave={(e) => { if (!downloadingPdf) e.currentTarget.style.borderColor = "var(--border)"; }}
+            >
+              {downloadingPdf ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              {downloadingPdf ? "Generating..." : "Download PDF"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

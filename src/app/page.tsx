@@ -529,7 +529,7 @@ export default function Home() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "12px",
+          gap: "16px",
           position: "relative",
           zIndex: 1,
         }}
@@ -545,6 +545,27 @@ export default function Home() {
         >
           &copy; {new Date().getFullYear()} Studio 858. All rights reserved.
         </p>
+        <a
+          href="/portal/login"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "var(--muted-foreground)",
+            textDecoration: "none",
+            opacity: 0.4,
+            transition: "opacity 0.2s ease",
+            fontFamily: "var(--font-dm-sans), sans-serif",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "0.9"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "0.4"; }}
+        >
+          Studio Portal
+        </a>
       </footer>
     </div>
   );
