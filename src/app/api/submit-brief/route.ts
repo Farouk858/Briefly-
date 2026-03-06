@@ -62,7 +62,14 @@ export async function POST(req: NextRequest) {
     };
 
     if (USE_BLOB) {
-      await blobWrite(submission);
+      try {
+        await blobWrite(submission);
+      } catch (blobErr) {
+        console.error("submit-brief blob error, falling back to local:", blobErr);
+        const existing = localRead() as object[];
+        existing.unshift(submission);
+        localWrite(existing);
+      }
     } else {
       const existing = localRead() as object[];
       existing.unshift(submission);
@@ -159,13 +166,17 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`;
 
-      await transporter.sendMail({
-        from: `"Briefly / Studio 858" <${smtpUser}>`,
-        to: "studio@858.ie",
-        replyTo: clientEmail || undefined,
-        subject: `New Brief: ${projectName}${companyName ? ` / ${companyName}` : ""}`,
-        html: emailHtml,
-      });
+      try {
+        await transporter.sendMail({
+          from: `"Briefly / Studio 858" <${smtpUser}>`,
+          to: "studio@858.ie",
+          replyTo: clientEmail || undefined,
+          subject: `New Brief: ${projectName}${companyName ? ` / ${companyName}` : ""}`,
+          html: emailHtml,
+        });
+      } catch (emailErr) {
+        console.error("submit-brief email error (non-fatal):", emailErr);
+      }
     }
 
     return NextResponse.json({ success: true, id: (submission as { id: string }).id });
