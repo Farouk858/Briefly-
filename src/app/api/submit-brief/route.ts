@@ -62,14 +62,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (USE_BLOB) {
-      try {
-        await blobWrite(submission);
-      } catch (blobErr) {
-        console.error("submit-brief blob error, falling back to local:", blobErr);
-        const existing = localRead() as object[];
-        existing.unshift(submission);
-        localWrite(existing);
-      }
+      await blobWrite(submission);
     } else {
       const existing = localRead() as object[];
       existing.unshift(submission);
