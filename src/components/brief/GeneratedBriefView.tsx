@@ -349,7 +349,7 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
   const submitLabel = {
     idle: null,
     sending: "Saving...",
-    saved: "Saved to portal",
+    saved: "Submitted to Studio 858",
     error: "Save failed — try again",
   };
 
@@ -762,12 +762,12 @@ export function GeneratedBriefView({ brief, formData, onReset }: GeneratedBriefV
           {submitStatus === "error" && <Mail size={14} />}
           {submitStatus === "idle" && <Mail size={14} />}
           {submitStatus === "saved"
-            ? "Brief saved to portal"
+            ? "Brief submitted to Studio 858"
             : submitStatus === "sending"
-            ? "Saving to portal..."
+            ? "Submitting..."
             : submitStatus === "error"
-            ? "Retry — save to portal"
-            : "Save to portal"}
+            ? "Retry — submit to Studio 858"
+            : "Submit brief to Studio 858"}
         </button>
 
         {/* Secondary actions */}

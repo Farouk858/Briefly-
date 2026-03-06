@@ -1,45 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-
-export const maxDuration = 30;
-// Raise body size limit to 10 MB so PDF attachment can be included
-export const dynamic = "force-dynamic";
-import path from "path";
-import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
-const DATA_FILE = path.join(process.cwd(), "data", "submissions.json");
+export const maxDuration = 30;
+export const dynamic = "force-dynamic";
 
-function readSubmissions(): object[] {
-  if (!fs.existsSync(DATA_FILE)) return [];
+// ---------------------------------------------------------------------------
+// Storage helpers — Vercel Blob in production, local JSON file in dev
+// ---------------------------------------------------------------------------
+
+const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
+const BLOB_PREFIX = "briefly-submissions/";
+
+// Local-dev fallback
+let devStore: object[] = [];
+function getDevStore() { return devStore; }
+function saveDevStore(data: object[]) { devStore = data; }
+
+// Attempt to lazy-load the local JSON file once per cold-start in dev
+import path from "path";
+import fs from "fs";
+const LOCAL_FILE = path.join(process.cwd(), "data", "submissions.json");
+function localRead(): object[] {
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-  } catch {
-    return [];
-  }
+    if (fs.existsSync(LOCAL_FILE)) return JSON.parse(fs.readFileSync(LOCAL_FILE, "utf8"));
+  } catch { /* ignore */ }
+  return getDevStore();
+}
+function localWrite(submissions: object[]) {
+  try {
+    const dir = path.dirname(LOCAL_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(LOCAL_FILE, JSON.stringify(submissions, null, 2), "utf8");
+  } catch { /* ignore */ }
+  saveDevStore(submissions);
 }
 
-function writeSubmissions(submissions: object[]) {
-  const dir = path.dirname(DATA_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(submissions, null, 2), "utf8");
+async function blobWrite(submission: object & { id: string }) {
+  const { put } = await import("@vercel/blob");
+  await put(
+    `${BLOB_PREFIX}${submission.id}.json`,
+    JSON.stringify(submission),
+    { access: "public", addRandomSuffix: false }
+  );
 }
+
+// ---------------------------------------------------------------------------
+// Route handler
+// ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { formData, brief } = body;
 
-    // Save submission
-    const submissions = readSubmissions();
     const submission = {
       id: uuidv4(),
       submittedAt: new Date().toISOString(),
       formData,
       brief,
     };
-    submissions.unshift(submission);
-    writeSubmissions(submissions);
+
+    if (USE_BLOB) {
+      await blobWrite(submission);
+    } else {
+      const existing = localRead() as object[];
+      existing.unshift(submission);
+      localWrite(existing);
+    }
 
     // Send email if SMTP configured
     const smtpHost = process.env.SMTP_HOST;
@@ -76,7 +104,6 @@ export async function POST(req: NextRequest) {
     .section { margin-bottom: 24px; }
     .section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #909090; margin-bottom: 8px; }
     .section-content { font-size: 14px; line-height: 1.75; color: #d0cac2; }
-    .tag { display: inline-block; padding: 3px 10px; background: rgba(1,255,0,0.1); border: 1px solid rgba(1,255,0,0.2); border-radius: 2px; font-size: 11px; color: #01ff00; margin: 2px; }
     .footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid #1e1e1e; font-size: 11px; color: #333; text-align: center; }
     ul { padding-left: 20px; }
     li { margin-bottom: 6px; font-size: 14px; color: #d0cac2; line-height: 1.6; }
@@ -92,53 +119,39 @@ export async function POST(req: NextRequest) {
         ${clientEmail ? `<br>${clientEmail}` : ""}
       </div>
     </div>
-
     <div class="section">
       <div class="section-label">Project Overview</div>
       <div class="section-content">${brief?.projectOverview || ""}</div>
     </div>
-
     <div class="section">
       <div class="section-label">Objectives</div>
-      <ul>
-        ${(brief?.objectives || []).map((o: string) => `<li>${o}</li>`).join("")}
-      </ul>
+      <ul>${(brief?.objectives || []).map((o: string) => `<li>${o}</li>`).join("")}</ul>
     </div>
-
     <div class="section">
       <div class="section-label">Target Audience</div>
       <div class="section-content">${brief?.targetAudience || ""}</div>
     </div>
-
     <div class="section">
       <div class="section-label">Creative Direction</div>
       <div class="section-content">${brief?.creativeDirection || ""}</div>
     </div>
-
     <div class="section">
       <div class="section-label">Deliverables</div>
-      <ul>
-        ${(brief?.deliverables || []).map((d: string) => `<li>${d}</li>`).join("")}
-      </ul>
+      <ul>${(brief?.deliverables || []).map((d: string) => `<li>${d}</li>`).join("")}</ul>
     </div>
-
     <div class="section">
       <div class="section-label">Timeline</div>
       <div class="section-content">${brief?.timeline || ""}</div>
     </div>
-
     <div class="section">
       <div class="section-label">Budget</div>
       <div class="section-content">${brief?.budget || ""}</div>
     </div>
-
     ${brief?.notes && brief.notes !== "No additional notes provided." ? `
     <div class="section">
       <div class="section-label">Additional Notes</div>
       <div class="section-content">${brief.notes}</div>
-    </div>
-    ` : ""}
-
+    </div>` : ""}
     <div class="footer">
       Generated by Briefly &middot; Studio 858 &middot; ${new Date().toLocaleDateString("en-IE")}
     </div>
@@ -155,7 +168,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: true, id: submission.id });
+    return NextResponse.json({ success: true, id: (submission as { id: string }).id });
   } catch (err) {
     console.error("submit-brief error:", err);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
