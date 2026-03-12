@@ -81,7 +81,7 @@ export interface BriefFormData {
   mustAvoid: string;
 
   // Step 4: Deliverables
-  deliverables: string;
+  deliverables: string[];
   outputFormats: OutputFormat[];
   filesRequired: string;
   revisionRounds: string;

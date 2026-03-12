@@ -38,7 +38,7 @@ const defaultFormData: BriefFormData = {
   visualStyle: "",
   mustInclude: "",
   mustAvoid: "",
-  deliverables: "",
+  deliverables: [],
   outputFormats: [],
   filesRequired: "",
   revisionRounds: "",
@@ -76,7 +76,7 @@ function validateStep(step: number, data: BriefFormData): ValidationErrors {
   }
 
   if (step === 4) {
-    if (!data.deliverables.trim()) errors.deliverables = "Please list your deliverables";
+    if (data.deliverables.length === 0) errors.deliverables = "Please add at least one deliverable";
   }
 
   return errors;

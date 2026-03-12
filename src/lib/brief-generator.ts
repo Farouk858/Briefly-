@@ -174,12 +174,8 @@ function buildCreativeDirection(data: BriefFormData): string {
 function buildDeliverables(data: BriefFormData): string[] {
   const deliverables: string[] = [];
 
-  if (data.deliverables) {
-    const items = data.deliverables
-      .split(/[,\n]+/)
-      .map((d) => d.trim())
-      .filter((d) => d.length > 2);
-    deliverables.push(...items);
+  if (data.deliverables.length > 0) {
+    deliverables.push(...data.deliverables);
   }
 
   if (data.outputFormats.length > 0) {

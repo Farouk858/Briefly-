@@ -1,7 +1,8 @@
 "use client";
 
-import { FormField, Input, Textarea } from "@/components/ui/FormField";
+import { FormField, Input } from "@/components/ui/FormField";
 import { TagSelect } from "@/components/ui/TagSelect";
+import { DeliverableListInput } from "@/components/ui/DeliverableListInput";
 import type { BriefFormData, OutputFormat } from "@/types/brief";
 
 const OUTPUT_FORMAT_OPTIONS: { value: OutputFormat; label: string }[] = [
@@ -72,12 +73,9 @@ export function Step4Deliverables({ data, onChange, errors }: Props) {
         required
         error={errors.deliverables}
       >
-        <Textarea
-          value={data.deliverables}
-          onChange={(e) => onChange({ deliverables: e.target.value })}
-          placeholder="Primary logo (horizontal + stacked versions), secondary logo, icon/mark, brand guidelines PDF, colour palette, typography guide, business card design, letterhead, social media profile templates (Instagram, LinkedIn), email signature..."
-          rows={5}
-          error={!!errors.deliverables}
+        <DeliverableListInput
+          items={data.deliverables}
+          onChange={(items) => onChange({ deliverables: items })}
         />
       </FormField>
 
