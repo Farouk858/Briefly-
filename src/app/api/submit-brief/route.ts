@@ -43,7 +43,7 @@ async function blobWrite(submission: object & { id: string }) {
   await put(
     `${BLOB_PREFIX}${submission.id}.json`,
     JSON.stringify(submission),
-    { access: "public", addRandomSuffix: false, token: BLOB_TOKEN }
+    { access: "private", addRandomSuffix: false, token: BLOB_TOKEN }
   );
 }
 

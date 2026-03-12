@@ -38,7 +38,9 @@ async function blobList() {
 }
 
 async function fetchBlob(url: string) {
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${BLOB_TOKEN}` },
+  });
   return res.json();
 }
 
