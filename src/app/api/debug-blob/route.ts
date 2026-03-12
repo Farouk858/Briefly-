@@ -27,7 +27,7 @@ export async function GET() {
     try {
       const { put, del } = await import("@vercel/blob");
       const testBlob = await put("briefly-submissions/debug-test.json", JSON.stringify({ test: true }), {
-        access: "public",
+        access: "private",
         addRandomSuffix: false,
         token: activeToken,
       });
