@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB1_READ_WRITE_TOKEN;
+const BLOB_TOKEN = process.env.BLOB1_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
 const USE_BLOB = !!BLOB_TOKEN;
+
 const BLOB_PREFIX = "briefly-submissions/";
 
 // ---------------------------------------------------------------------------
