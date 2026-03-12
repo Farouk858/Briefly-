@@ -132,15 +132,23 @@ export function ReferenceLinkInput({ links, onChange }: ReferenceLinkInputProps)
           type="button"
           onClick={addLink}
           disabled={!newUrl.trim()}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 self-start"
+          className="flex items-center justify-center gap-2 w-full transition-all duration-200"
           style={{
-            background: newUrl.trim() ? "var(--accent)" : "var(--border)",
+            background: newUrl.trim() ? "var(--accent)" : "rgba(255,255,255,0.04)",
             color: newUrl.trim() ? "var(--background)" : "var(--muted-foreground)",
             cursor: newUrl.trim() ? "pointer" : "not-allowed",
+            border: newUrl.trim() ? "1px solid var(--accent)" : "1px dashed var(--border)",
+            borderRadius: "6px",
+            padding: "12px 16px",
+            fontSize: "12px",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            fontFamily: "var(--font-dm-sans), sans-serif",
           }}
         >
-          <Plus size={13} />
-          Add Link
+          <Plus size={15} />
+          {newUrl.trim() ? "Add Link" : "Enter a URL above to add a link"}
         </button>
       </div>
     </div>

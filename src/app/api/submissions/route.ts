@@ -66,6 +66,40 @@ export async function GET() {
 }
 
 // ---------------------------------------------------------------------------
+// PATCH — update studio notes on a submission
+// ---------------------------------------------------------------------------
+export async function PATCH(req: NextRequest) {
+  try {
+    const { id, studioNotes } = await req.json();
+
+    if (USE_BLOB) {
+      const { put } = await import("@vercel/blob");
+      const blobs = await blobList();
+      const target = blobs.find((b) => b.pathname === `${BLOB_PREFIX}${id}.json`);
+      if (!target) return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+      const existing = await fetchBlob(target.url);
+      await put(
+        `${BLOB_PREFIX}${id}.json`,
+        JSON.stringify({ ...existing, studioNotes }),
+        { access: "private", addRandomSuffix: false, token: BLOB_TOKEN }
+      );
+    } else {
+      const all = localRead() as Array<{ id: string; studioNotes?: string }>;
+      const idx = all.findIndex((s) => s.id === id);
+      if (idx !== -1) {
+        all[idx] = { ...all[idx], studioNotes };
+        localWrite(all);
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("submissions PATCH error:", err);
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // DELETE — remove a submission by id
 // ---------------------------------------------------------------------------
 export async function DELETE(req: NextRequest) {

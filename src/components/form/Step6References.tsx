@@ -33,6 +33,29 @@ export function Step6References({ data, onChange, errors }: Props) {
         </p>
       </div>
 
+      {/* Almost done tip */}
+      <div
+        style={{
+          borderRadius: "8px",
+          padding: "16px 20px",
+          background: "rgba(1, 255, 0, 0.05)",
+          border: "1px solid rgba(1, 255, 0, 0.18)",
+          display: "flex",
+          gap: "12px",
+          alignItems: "flex-start",
+        }}
+      >
+        <span style={{ fontSize: "18px", lineHeight: 1, flexShrink: 0 }}>✦</span>
+        <div>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em", marginBottom: "4px", fontFamily: "var(--font-dm-sans), sans-serif" }}>
+            Almost done
+          </p>
+          <p style={{ fontSize: "12px", color: "var(--accent-light)", lineHeight: 1.6 }}>
+            Once you submit, we&apos;ll compile everything into a clean, structured brief. You&apos;ll be able to review it before we begin work.
+          </p>
+        </div>
+      </div>
+
       {/* Reference Links */}
       <FormField
         label="Reference Links"
@@ -52,7 +75,7 @@ export function Step6References({ data, onChange, errors }: Props) {
         <FileUpload
           files={data.existingBrief}
           onFilesChange={(files: UploadedFile[]) => onChange({ existingBrief: files })}
-          accept=".pdf,.doc,.docx,.txt,.pages"
+          accept="*"
           maxFiles={5}
           label="Upload existing brief documents"
         />
@@ -85,18 +108,6 @@ export function Step6References({ data, onChange, errors }: Props) {
         />
       </FormField>
 
-      {/* Final note */}
-      <div
-        className="rounded-lg p-4"
-        style={{
-          background: "rgba(1, 255, 0, 0.04)",
-          border: "1px solid rgba(1, 255, 0, 0.12)",
-        }}
-      >
-        <p className="text-xs" style={{ color: "var(--accent-light)" }}>
-          <span className="font-semibold">Almost done.</span> Once you submit, we&apos;ll compile everything into a clean, structured brief. You&apos;ll be able to review it before we begin work.
-        </p>
-      </div>
     </div>
   );
 }

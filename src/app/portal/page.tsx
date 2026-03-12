@@ -13,15 +13,17 @@ import {
   Download,
   RefreshCw,
   Calendar,
-  DollarSign,
-  Package,
   Target,
   Palette,
   Link2,
-  StickyNote,
   Briefcase,
   Mail,
   Building2,
+  StickyNote,
+  Save,
+  Loader2,
+  Package,
+  DollarSign,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import type { BriefFormData, GeneratedBrief } from "@/types/brief";
@@ -31,6 +33,7 @@ interface Submission {
   submittedAt: string;
   formData: BriefFormData;
   brief: GeneratedBrief;
+  studioNotes?: string;
 }
 
 function StatCard({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
@@ -79,12 +82,18 @@ function BriefDetailPanel({
   submission,
   onClose,
   onDelete,
+  onNotesUpdate,
 }: {
   submission: Submission;
   onClose: () => void;
   onDelete: (id: string) => void;
+  onNotesUpdate: (id: string, notes: string) => void;
 }) {
   const { formData, brief } = submission;
+  const [studioNotes, setStudioNotes] = useState(submission.studioNotes || "");
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesSaved, setNotesSaved] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-IE", {
@@ -95,14 +104,125 @@ function BriefDetailPanel({
       minute: "2-digit",
     });
 
-  const bodyText: React.CSSProperties = {
-    fontSize: "13px",
-    lineHeight: 1.75,
-    color: "var(--foreground)",
-    opacity: 0.85,
+  const handleSaveNotes = async () => {
+    setNotesSaving(true);
+    try {
+      await fetch("/api/submissions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: submission.id, studioNotes }),
+      });
+      onNotesUpdate(submission.id, studioNotes);
+      setNotesSaved(true);
+      setTimeout(() => setNotesSaved(false), 2000);
+    } finally {
+      setNotesSaving(false);
+    }
   };
 
-  const sectionLabel: React.CSSProperties = {
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentW = pageW - margin * 2;
+      let y = margin;
+
+      doc.setFillColor(4, 4, 4);
+      doc.rect(0, 0, pageW, pageH, "F");
+
+      const checkPageBreak = (needed: number) => {
+        if (y + needed > pageH - margin) {
+          doc.addPage();
+          doc.setFillColor(4, 4, 4);
+          doc.rect(0, 0, pageW, pageH, "F");
+          y = margin;
+        }
+      };
+
+      // Header
+      doc.setFillColor(15, 15, 15);
+      doc.roundedRect(margin - 4, y - 4, contentW + 8, 38, 2, 2, "F");
+      doc.setDrawColor(1, 255, 0);
+      doc.setLineWidth(0.5);
+      doc.line(margin - 4, y - 4, margin - 4, y + 34);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(180, 180, 180);
+      doc.text("BRIEFLY / STUDIO 858", margin + 4, y + 2);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(240, 235, 225);
+      doc.text(formData.projectName || "Untitled Project", margin + 4, y + 14);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(180, 180, 180);
+      const metaParts = [formData.clientName, formData.jobRole, formData.companyName].filter(Boolean);
+      doc.text(metaParts.join("  /  "), margin + 4, y + 22);
+      doc.text(`Submitted ${formatDate(submission.submittedAt)}`, margin + 4, y + 29);
+      y += 48;
+
+      const addSection = (title: string, content: string | string[]) => {
+        const isArray = Array.isArray(content);
+        const lineCount = isArray ? content.length : doc.splitTextToSize(content, contentW - 12).length;
+        const blockH = 14 + lineCount * 6 + 10;
+        checkPageBreak(blockH);
+        doc.setFillColor(8, 8, 8);
+        doc.roundedRect(margin, y, contentW, blockH, 2, 2, "F");
+        doc.setDrawColor(1, 255, 0);
+        doc.setLineWidth(0.3);
+        doc.line(margin, y + 12, margin + 30, y + 12);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(180, 180, 180);
+        doc.text(title.toUpperCase(), margin + 4, y + 8);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(208, 202, 194);
+        if (isArray) {
+          content.forEach((item, idx) => {
+            doc.setTextColor(1, 255, 0);
+            doc.text(`${idx + 1}`, margin + 4, y + 16 + idx * 6);
+            doc.setTextColor(208, 202, 194);
+            doc.text(doc.splitTextToSize(item, contentW - 20), margin + 10, y + 16 + idx * 6);
+          });
+        } else {
+          doc.text(doc.splitTextToSize(content, contentW - 8), margin + 4, y + 16);
+        }
+        y += blockH + 4;
+      };
+
+      addSection("Project Overview", brief.projectOverview);
+      addSection("Objectives", brief.objectives);
+      addSection("Target Audience", brief.targetAudience);
+      addSection("Creative Direction", brief.creativeDirection);
+      addSection("Deliverables", brief.deliverables);
+      addSection("Timeline", brief.timeline);
+      addSection("Budget", brief.budget);
+      if (brief.technicalRequirements) addSection("Technical Requirements", brief.technicalRequirements);
+      if (brief.notes && brief.notes !== "No additional notes provided.") addSection("Client Notes", brief.notes);
+      if (studioNotes) addSection("Studio Notes", studioNotes);
+
+      doc.save(`brief-${(formData.projectName || "project").toLowerCase().replace(/\s+/g, "-")}.pdf`);
+    } catch (err) {
+      console.error("PDF download failed:", err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const card: React.CSSProperties = {
+    borderRadius: "6px",
+    padding: "16px 18px",
+    background: "rgba(255,255,255,0.025)",
+    border: "1px solid var(--border)",
+    borderLeft: "3px solid var(--accent)",
+  };
+
+  const label: React.CSSProperties = {
     fontSize: "9px",
     fontWeight: 700,
     letterSpacing: "0.16em",
@@ -110,6 +230,13 @@ function BriefDetailPanel({
     color: "var(--muted-foreground)",
     fontFamily: "var(--font-dm-sans), sans-serif",
     marginBottom: "8px",
+  };
+
+  const body: React.CSSProperties = {
+    fontSize: "13px",
+    lineHeight: 1.75,
+    color: "var(--foreground)",
+    opacity: 0.85,
   };
 
   return (
@@ -124,8 +251,8 @@ function BriefDetailPanel({
         top: 0,
         right: 0,
         bottom: 0,
-        width: "clamp(320px, 45vw, 640px)",
-        background: "rgba(6, 6, 6, 0.97)",
+        width: "clamp(340px, 48vw, 680px)",
+        background: "rgba(6, 6, 6, 0.98)",
         backdropFilter: "blur(32px)",
         WebkitBackdropFilter: "blur(32px)",
         borderLeft: "1px solid var(--border)",
@@ -135,100 +262,44 @@ function BriefDetailPanel({
         overflow: "hidden",
       }}
     >
-      {/* Panel header */}
-      <div
-        style={{
-          padding: "20px 24px",
-          borderBottom: "1px solid var(--border)",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: "12px",
-          flexShrink: 0,
-        }}
-      >
+      {/* Header */}
+      <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", flexShrink: 0 }}>
         <div style={{ minWidth: 0 }}>
-          <p
-            style={{
-              fontSize: "9px",
-              fontWeight: 700,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: "var(--accent)",
-              marginBottom: "6px",
-              fontFamily: "var(--font-dm-sans), sans-serif",
-            }}
-          >
-            Brief Details
+          <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "6px", fontFamily: "var(--font-dm-sans), sans-serif" }}>
+            Project Brief
           </p>
-          <h2
-            style={{
-              fontFamily: "var(--font-cormorant), Georgia, serif",
-              fontSize: "clamp(18px, 3vw, 26px)",
-              fontWeight: 600,
-              color: "var(--foreground)",
-              lineHeight: 1.15,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "clamp(18px, 3vw, 26px)", fontWeight: 600, color: "var(--foreground)", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {formData.projectName || "Untitled Project"}
           </h2>
-          <p style={{ fontSize: "11px", color: "var(--muted-foreground)", opacity: 0.7, marginTop: "4px" }}>
+          <p style={{ fontSize: "11px", color: "var(--muted-foreground)", opacity: 0.6, marginTop: "4px" }}>
             {formatDate(submission.submittedAt)}
           </p>
         </div>
         <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
           <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            title="Download PDF"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "34px", height: "34px", background: "transparent", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--muted-foreground)", cursor: "pointer", transition: "all 0.2s ease" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted-foreground)"; }}
+          >
+            {downloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+          </button>
+          <button
             onClick={() => onDelete(submission.id)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "34px",
-              height: "34px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "3px",
-              color: "var(--muted-foreground)",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "rgba(255,80,80,0.4)";
-              e.currentTarget.style.color = "rgba(255,80,80,0.8)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--border)";
-              e.currentTarget.style.color = "var(--muted-foreground)";
-            }}
+            title="Delete"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "34px", height: "34px", background: "transparent", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--muted-foreground)", cursor: "pointer", transition: "all 0.2s ease" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,80,80,0.4)"; e.currentTarget.style.color = "rgba(255,80,80,0.8)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted-foreground)"; }}
           >
             <Trash2 size={13} />
           </button>
           <button
             onClick={onClose}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "34px",
-              height: "34px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "3px",
-              color: "var(--muted-foreground)",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--muted-foreground)";
-              e.currentTarget.style.color = "var(--foreground)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--border)";
-              e.currentTarget.style.color = "var(--muted-foreground)";
-            }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "34px", height: "34px", background: "transparent", border: "1px solid var(--border)", borderRadius: "3px", color: "var(--muted-foreground)", cursor: "pointer", transition: "all 0.2s ease" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--muted-foreground)"; e.currentTarget.style.color = "var(--foreground)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted-foreground)"; }}
           >
             <X size={13} />
           </button>
@@ -236,168 +307,176 @@ function BriefDetailPanel({
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
-          {/* Client info */}
-          <div
-            className="glass-surface"
-            style={{ borderRadius: "5px", padding: "16px 18px" }}
-          >
-            <p style={{ ...sectionLabel, marginBottom: "12px" }}>Client</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Users size={12} style={{ color: "var(--accent)", opacity: 0.7, flexShrink: 0 }} />
-                <span style={{ ...bodyText, fontSize: "13px" }}>{formData.clientName}</span>
+          {/* Client strip */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px" }}>
+            {[
+              { icon: <Users size={11} />, value: formData.clientName },
+              formData.jobRole ? { icon: <Briefcase size={11} />, value: formData.jobRole } : null,
+              formData.companyName ? { icon: <Building2 size={11} />, value: formData.companyName } : null,
+              formData.clientEmail ? { icon: <Mail size={11} />, value: formData.clientEmail, href: `mailto:${formData.clientEmail}` } : null,
+            ].filter(Boolean).map((item, i) => item && (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 10px", background: "rgba(1,255,0,0.04)", border: "1px solid rgba(1,255,0,0.1)", borderRadius: "4px" }}>
+                <span style={{ color: "var(--accent)", opacity: 0.7, flexShrink: 0 }}>{item.icon}</span>
+                {item.href ? (
+                  <a href={item.href} style={{ fontSize: "11px", color: "var(--accent)", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.value}</a>
+                ) : (
+                  <span style={{ fontSize: "11px", color: "var(--foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.value}</span>
+                )}
               </div>
-              {formData.jobRole && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Briefcase size={12} style={{ color: "var(--accent)", opacity: 0.7, flexShrink: 0 }} />
-                  <span style={{ ...bodyText, fontSize: "13px" }}>{formData.jobRole}</span>
-                </div>
-              )}
-              {formData.companyName && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Building2 size={12} style={{ color: "var(--accent)", opacity: 0.7, flexShrink: 0 }} />
-                  <span style={{ ...bodyText, fontSize: "13px" }}>{formData.companyName}</span>
-                </div>
-              )}
-              {formData.clientEmail && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Mail size={12} style={{ color: "var(--accent)", opacity: 0.7, flexShrink: 0 }} />
-                  <a
-                    href={`mailto:${formData.clientEmail}`}
-                    style={{ ...bodyText, fontSize: "13px", color: "var(--accent)", textDecoration: "none" }}
-                  >
-                    {formData.clientEmail}
-                  </a>
-                </div>
-              )}
-            </div>
+            ))}
           </div>
 
-          {/* Project overview */}
-          <div>
-            <p style={sectionLabel}>Project Overview</p>
-            <p style={bodyText}>{brief.projectOverview}</p>
+          {/* Project types */}
+          {formData.projectType?.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {formData.projectType.map((t: string) => (
+                <span key={t} style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em", padding: "4px 10px", borderRadius: "20px", background: "rgba(1,255,0,0.08)", border: "1px solid rgba(1,255,0,0.2)", color: "var(--accent)", fontFamily: "var(--font-dm-sans), sans-serif" }}>
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Overview */}
+          <div style={card}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+              <FileText size={11} style={{ color: "var(--accent)" }} />
+              <p style={{ ...label, marginBottom: 0 }}>Project Overview</p>
+            </div>
+            <p style={body}>{brief.projectOverview}</p>
           </div>
 
           {/* Objectives */}
-          <div>
-            <p style={sectionLabel}>Objectives</p>
-            <ul style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div style={{ ...card, borderLeftColor: "#4af" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+              <Target size={11} style={{ color: "#4af" }} />
+              <p style={{ ...label, marginBottom: 0 }}>Objectives</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {brief.objectives.map((obj, i) => (
-                <li key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "var(--accent)",
-                      fontFamily: "var(--font-mono), monospace",
-                      marginTop: "3px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <p style={bodyText}>{obj}</p>
-                </li>
+                <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#4af", fontFamily: "var(--font-mono), monospace", marginTop: "4px", flexShrink: 0 }}>{String(i + 1).padStart(2, "0")}</span>
+                  <p style={body}>{obj}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
           {/* Target audience */}
-          <div>
-            <p style={sectionLabel}>Target Audience</p>
-            <p style={bodyText}>{brief.targetAudience}</p>
+          <div style={{ ...card, borderLeftColor: "#a4f" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+              <Users size={11} style={{ color: "#a4f" }} />
+              <p style={{ ...label, marginBottom: 0 }}>Target Audience</p>
+            </div>
+            <p style={body}>{brief.targetAudience}</p>
           </div>
 
           {/* Creative direction */}
-          <div>
-            <p style={sectionLabel}>Creative Direction</p>
-            <p style={bodyText}>{brief.creativeDirection}</p>
+          <div style={{ ...card, borderLeftColor: "#fa4" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+              <Palette size={11} style={{ color: "#fa4" }} />
+              <p style={{ ...label, marginBottom: 0 }}>Creative Direction</p>
+            </div>
+            <p style={body}>{brief.creativeDirection}</p>
           </div>
 
           {/* Deliverables */}
-          <div>
-            <p style={sectionLabel}>Deliverables</p>
-            <ul style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+          <div style={{ ...card, borderLeftColor: "var(--accent)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+              <Package size={11} style={{ color: "var(--accent)" }} />
+              <p style={{ ...label, marginBottom: 0 }}>Deliverables</p>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {brief.deliverables.map((d, i) => (
-                <li key={i} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                  <span
-                    style={{
-                      width: "3px",
-                      height: "3px",
-                      borderRadius: "50%",
-                      background: "var(--accent)",
-                      flexShrink: 0,
-                      marginTop: "8px",
-                    }}
-                  />
-                  <p style={bodyText}>{d}</p>
-                </li>
+                <span key={i} style={{ fontSize: "11px", padding: "5px 10px", borderRadius: "4px", background: "rgba(1,255,0,0.06)", border: "1px solid rgba(1,255,0,0.15)", color: "var(--foreground)", lineHeight: 1.4 }}>
+                  {d}
+                </span>
               ))}
-            </ul>
+            </div>
           </div>
 
-          {/* Timeline & Budget */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            <div>
-              <p style={sectionLabel}>Timeline</p>
-              <p style={bodyText}>{brief.timeline}</p>
+          {/* Timeline + Budget */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div style={{ padding: "16px", borderRadius: "6px", background: "rgba(255,200,60,0.05)", border: "1px solid rgba(255,200,60,0.2)", textAlign: "center" }}>
+              <Calendar size={16} style={{ color: "#fc3", margin: "0 auto 6px" }} />
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#fc3", fontFamily: "var(--font-dm-sans), sans-serif", marginBottom: "4px" }}>Timeline</p>
+              <p style={{ fontSize: "12px", color: "var(--foreground)", lineHeight: 1.4 }}>{brief.timeline}</p>
             </div>
-            <div>
-              <p style={sectionLabel}>Budget</p>
-              <p style={bodyText}>{brief.budget}</p>
+            <div style={{ padding: "16px", borderRadius: "6px", background: "rgba(60,255,120,0.05)", border: "1px solid rgba(60,255,120,0.2)", textAlign: "center" }}>
+              <DollarSign size={16} style={{ color: "#3f8", margin: "0 auto 6px" }} />
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#3f8", fontFamily: "var(--font-dm-sans), sans-serif", marginBottom: "4px" }}>Budget</p>
+              <p style={{ fontSize: "12px", color: "var(--foreground)", lineHeight: 1.4 }}>{brief.budget}</p>
             </div>
           </div>
 
           {/* Technical requirements */}
           {brief.technicalRequirements && (
-            <div>
-              <p style={sectionLabel}>Technical Requirements</p>
-              <p style={bodyText}>{brief.technicalRequirements}</p>
+            <div style={card}>
+              <p style={label}>Technical Requirements</p>
+              <p style={body}>{brief.technicalRequirements}</p>
             </div>
           )}
 
           {/* References */}
-          {brief.references.length > 0 && (
-            <div>
-              <p style={sectionLabel}>References</p>
+          {brief.references?.length > 0 && (
+            <div style={card}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+                <Link2 size={11} style={{ color: "var(--accent)" }} />
+                <p style={{ ...label, marginBottom: 0 }}>References</p>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {brief.references.map((ref) => (
-                  <div key={ref.id}>
-                    <a
-                      href={ref.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        fontSize: "13px",
-                        color: "var(--accent)",
-                        textDecoration: "none",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {ref.label || ref.url}
-                    </a>
-                    {ref.notes && (
-                      <p style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "2px" }}>
-                        {ref.notes}
-                      </p>
-                    )}
+                  <div key={ref.id} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                    <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--accent)", flexShrink: 0, marginTop: "6px" }} />
+                    <div>
+                      <a href={ref.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: "12px", color: "var(--accent)", textDecoration: "none", fontWeight: 500 }}>
+                        {ref.label || ref.url}
+                      </a>
+                      {ref.notes && <p style={{ fontSize: "11px", color: "var(--muted-foreground)", marginTop: "2px" }}>{ref.notes}</p>}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Notes */}
+          {/* Client notes */}
           {brief.notes && brief.notes !== "No additional notes provided." && (
-            <div>
-              <p style={sectionLabel}>Additional Notes</p>
-              <p style={bodyText}>{brief.notes}</p>
+            <div style={card}>
+              <p style={label}>Client Notes</p>
+              <p style={body}>{brief.notes}</p>
             </div>
           )}
+
+          {/* Studio notes */}
+          <div style={{ borderRadius: "6px", padding: "16px 18px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderLeft: "3px solid rgba(255,255,255,0.15)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+              <StickyNote size={11} style={{ color: "var(--muted-foreground)" }} />
+              <p style={{ ...label, marginBottom: 0 }}>Studio Notes</p>
+              <span style={{ fontSize: "9px", color: "var(--muted-foreground)", opacity: 0.5, marginLeft: "auto" }}>Private — not shared with client</span>
+            </div>
+            <textarea
+              value={studioNotes}
+              onChange={(e) => setStudioNotes(e.target.value)}
+              placeholder="Add your internal notes, ideas, or next steps..."
+              rows={4}
+              style={{ width: "100%", background: "transparent", border: "none", outline: "none", resize: "vertical", fontSize: "13px", lineHeight: 1.7, color: "var(--foreground)", opacity: 0.8, fontFamily: "var(--font-dm-sans), sans-serif", placeholder: "var(--muted-foreground)" }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+              <button
+                onClick={handleSaveNotes}
+                disabled={notesSaving}
+                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", background: notesSaved ? "rgba(1,255,0,0.1)" : "transparent", border: `1px solid ${notesSaved ? "rgba(1,255,0,0.3)" : "var(--border)"}`, borderRadius: "3px", color: notesSaved ? "var(--accent)" : "var(--muted-foreground)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s ease", fontFamily: "var(--font-dm-sans), sans-serif" }}
+              >
+                {notesSaving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
+                {notesSaved ? "Saved" : "Save Notes"}
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </motion.div>
@@ -411,6 +490,11 @@ export default function Portal() {
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
+
+  const handleNotesUpdate = (id: string, notes: string) => {
+    setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, studioNotes: notes } : s));
+    if (selected?.id === id) setSelected((prev) => prev ? { ...prev, studioNotes: notes } : prev);
+  };
 
   // Auth guard — redirect to login if not authenticated
   useEffect(() => {
@@ -992,6 +1076,7 @@ export default function Portal() {
               submission={selected}
               onClose={() => setSelected(null)}
               onDelete={handleDelete}
+              onNotesUpdate={handleNotesUpdate}
             />
           </>
         )}
