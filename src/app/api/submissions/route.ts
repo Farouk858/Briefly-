@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB1_READ_WRITE_TOKEN;
+const USE_BLOB = !!BLOB_TOKEN;
 const BLOB_PREFIX = "briefly-submissions/";
 
 // ---------------------------------------------------------------------------
@@ -31,7 +32,7 @@ function localWrite(data: object[]) {
 // ---------------------------------------------------------------------------
 async function blobList() {
   const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix: BLOB_PREFIX });
+  const { blobs } = await list({ prefix: BLOB_PREFIX, token: BLOB_TOKEN });
   return blobs;
 }
 
@@ -72,7 +73,7 @@ export async function DELETE(req: NextRequest) {
       const { del } = await import("@vercel/blob");
       const blobs = await blobList();
       const target = blobs.find((b) => b.pathname === `${BLOB_PREFIX}${id}.json`);
-      if (target) await del(target.url);
+      if (target) await del(target.url, { token: BLOB_TOKEN });
     } else {
       const existing = localRead() as Array<{ id: string }>;
       localWrite(existing.filter((s) => s.id !== id));

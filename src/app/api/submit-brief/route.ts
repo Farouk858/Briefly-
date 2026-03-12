@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // Storage helpers — Vercel Blob in production, local JSON file in dev
 // ---------------------------------------------------------------------------
 
-const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
+const USE_BLOB = !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB1_READ_WRITE_TOKEN);
 const BLOB_PREFIX = "briefly-submissions/";
 
 // Local-dev fallback
@@ -36,12 +36,14 @@ function localWrite(submissions: object[]) {
   saveDevStore(submissions);
 }
 
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB1_READ_WRITE_TOKEN;
+
 async function blobWrite(submission: object & { id: string }) {
   const { put } = await import("@vercel/blob");
   await put(
     `${BLOB_PREFIX}${submission.id}.json`,
     JSON.stringify(submission),
-    { access: "public", addRandomSuffix: false }
+    { access: "public", addRandomSuffix: false, token: BLOB_TOKEN }
   );
 }
 
