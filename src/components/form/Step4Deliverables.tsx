@@ -43,6 +43,29 @@ export function Step4Deliverables({ data, onChange, errors }: Props) {
         </p>
       </div>
 
+      {/* Tip */}
+      <div
+        style={{
+          borderRadius: "8px",
+          padding: "16px 20px",
+          background: "rgba(1, 255, 0, 0.05)",
+          border: "1px solid rgba(1, 255, 0, 0.18)",
+          display: "flex",
+          gap: "12px",
+          alignItems: "flex-start",
+        }}
+      >
+        <span style={{ fontSize: "18px", lineHeight: 1, flexShrink: 0 }}>✦</span>
+        <div>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em", marginBottom: "4px", fontFamily: "var(--font-dm-sans), sans-serif" }}>
+            Be specific
+          </p>
+          <p style={{ fontSize: "12px", color: "var(--accent-light)", lineHeight: 1.6 }}>
+            The more specific you are about deliverables, the more accurate your brief and timeline estimate will be. Include quantities where relevant, e.g. &quot;5 social post templates&quot; rather than &quot;social posts&quot;.
+          </p>
+        </div>
+      </div>
+
       <FormField
         label="List of Deliverables"
         hint="Be as specific as possible: what files, assets, or outputs do you expect to receive?"
@@ -91,18 +114,6 @@ export function Step4Deliverables({ data, onChange, errors }: Props) {
         />
       </FormField>
 
-      {/* Helpful callout */}
-      <div
-        className="rounded-lg p-4"
-        style={{
-          background: "rgba(1, 255, 0, 0.04)",
-          border: "1px solid rgba(1, 255, 0, 0.12)",
-        }}
-      >
-        <p className="text-xs" style={{ color: "var(--accent-light)" }}>
-          <span className="font-semibold">Tip:</span> The more specific you are about deliverables, the more accurate your brief and timeline estimate will be. Include quantities where relevant, e.g. &quot;5 social post templates&quot; rather than &quot;social posts&quot;.
-        </p>
-      </div>
     </div>
   );
 }

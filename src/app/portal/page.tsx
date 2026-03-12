@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   FileText,
+  Paperclip,
+  Image,
+  Film,
   Clock,
   Users,
   ChevronRight,
@@ -439,6 +442,47 @@ function BriefDetailPanel({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Attached files */}
+          {((formData.uploadedFiles?.length > 0) || (formData.existingBrief?.length > 0)) && (
+            <div style={card}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+                <Paperclip size={11} style={{ color: "var(--accent)" }} />
+                <p style={{ ...label, marginBottom: 0 }}>Attached Files</p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {[...(formData.existingBrief || []), ...(formData.uploadedFiles || [])].map((file) => {
+                  const isImage = file.type?.startsWith("image/");
+                  const isVideo = file.type?.startsWith("video/");
+                  const IconComp = isImage ? Image : isVideo ? Film : FileText;
+                  const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+                  return (
+                    <a
+                      key={file.id}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", borderRadius: "5px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", textDecoration: "none" }}
+                    >
+                      {isImage && file.preview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={file.preview} alt={file.name} style={{ width: "32px", height: "32px", borderRadius: "3px", objectFit: "cover", flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: "32px", height: "32px", borderRadius: "3px", background: "rgba(1,255,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <IconComp size={14} style={{ color: "var(--accent)" }} />
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: "12px", color: "var(--foreground)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</p>
+                        <p style={{ fontSize: "10px", color: "var(--muted-foreground)" }}>{formatSize(file.size)}</p>
+                      </div>
+                      <Download size={11} style={{ color: "var(--muted-foreground)", flexShrink: 0 }} />
+                    </a>
+                  );
+                })}
               </div>
             </div>
           )}

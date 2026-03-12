@@ -51,6 +51,29 @@ export function Step5Timeline({ data, onChange, errors }: Props) {
         </p>
       </div>
 
+      {/* Tip */}
+      <div
+        style={{
+          borderRadius: "8px",
+          padding: "16px 20px",
+          background: "rgba(1, 255, 0, 0.05)",
+          border: "1px solid rgba(1, 255, 0, 0.18)",
+          display: "flex",
+          gap: "12px",
+          alignItems: "flex-start",
+        }}
+      >
+        <span style={{ fontSize: "18px", lineHeight: 1, flexShrink: 0 }}>✦</span>
+        <div>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em", marginBottom: "4px", fontFamily: "var(--font-dm-sans), sans-serif" }}>
+            How we use this
+          </p>
+          <p style={{ fontSize: "12px", color: "var(--accent-light)", lineHeight: 1.6 }}>
+            Your timeline and budget help us accurately scope the project, allocate the right resources, and build a realistic project plan. There&apos;s no wrong answer — honesty here leads to better outcomes for everyone.
+          </p>
+        </div>
+      </div>
+
       <FormField
         label="Project Timeline"
         hint="How quickly do you need this completed?"
@@ -103,21 +126,6 @@ export function Step5Timeline({ data, onChange, errors }: Props) {
         />
       </FormField>
 
-      {/* Timeline context */}
-      <div
-        className="rounded-lg p-4"
-        style={{
-          background: "var(--surface-elevated)",
-          border: "1px solid var(--border)",
-        }}
-      >
-        <p className="text-xs font-semibold mb-2" style={{ color: "var(--foreground)" }}>
-          How we use this information
-        </p>
-        <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-          Your timeline and budget help us accurately scope the project, allocate the right resources, and build a realistic project plan. There&apos;s no wrong answer - honesty here leads to better outcomes for everyone.
-        </p>
-      </div>
     </div>
   );
 }
