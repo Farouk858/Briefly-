@@ -463,7 +463,7 @@ function BriefDetailPanel({
               onChange={(e) => setStudioNotes(e.target.value)}
               placeholder="Add your internal notes, ideas, or next steps..."
               rows={4}
-              style={{ width: "100%", background: "transparent", border: "none", outline: "none", resize: "vertical", fontSize: "13px", lineHeight: 1.7, color: "var(--foreground)", opacity: 0.8, fontFamily: "var(--font-dm-sans), sans-serif", placeholder: "var(--muted-foreground)" }}
+              style={{ width: "100%", background: "transparent", border: "none", outline: "none", resize: "vertical", fontSize: "13px", lineHeight: 1.7, color: "var(--foreground)", opacity: 0.8, fontFamily: "var(--font-dm-sans), sans-serif" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
               <button
